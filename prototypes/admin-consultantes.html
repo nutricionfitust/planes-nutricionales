@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NutriUst — Panel de Consultantes</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+  :root{
+    --blue:#0072FB; --blue-2:#6EA4FB; --blue-3:#99C5FF;
+    --ink-1:#0B1B33; --ink-2:#3E4E75; --ink-3:#8592B4;
+    --card:#FFFFFF; --line:#DCE6F8; --chip:#EAF2FF;
+    --green:#1F9D6B; --red:#E5484D;
+    --shadow:rgba(20,60,140,0.10);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Plus Jakarta Sans',sans-serif;background:#F6FAFF;color:var(--ink-1);min-height:100vh;}
+  .wrap{max-width:640px;margin:0 auto;padding:28px 18px 60px;}
+  .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;}
+  .brand{font-size:19px;font-weight:800;letter-spacing:-0.01em;}
+  .brand span{color:var(--blue);}
+  .sub{color:var(--ink-3);font-size:12.5px;margin-top:2px;font-family:'DM Mono',monospace;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 10px 28px var(--shadow);margin-bottom:20px;}
+  .card h2{font-size:14px;margin:0 0 16px;color:var(--ink-1);display:flex;align-items:center;gap:8px;}
+  label{display:block;font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:6px;margin-top:14px;}
+  label:first-of-type{margin-top:0;}
+  input{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:10px;font-size:14.5px;font-family:'Plus Jakarta Sans',sans-serif;color:var(--ink-1);outline:none;transition:border-color .15s;}
+  input:focus{border-color:var(--blue);}
+  .row{display:flex;gap:8px;align-items:flex-end;}
+  .row input{flex:1;}
+  .btn-mini{flex-shrink:0;background:var(--chip);border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:12px;font-weight:600;color:var(--blue);cursor:pointer;white-space:nowrap;}
+  .btn{width:100%;margin-top:18px;background:var(--blue);color:#fff;border:none;border-radius:12px;padding:13px;font-size:14.5px;font-weight:700;cursor:pointer;box-shadow:0 10px 22px rgba(0,114,251,0.28);}
+  .btn:active{transform:scale(0.98);}
+  .msg{margin-top:12px;font-size:13px;padding:10px 13px;border-radius:10px;display:none;}
+  .msg.ok{display:block;background:rgba(31,157,107,0.10);color:var(--green);border:1px solid rgba(31,157,107,0.25);}
+  .msg.err{display:block;background:rgba(229,72,77,0.08);color:var(--red);border:1px solid rgba(229,72,77,0.25);}
+  .list-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;}
+  .list-count{font-family:'DM Mono',monospace;font-size:11px;color:var(--ink-3);}
+  .consultante{display:flex;align-items:center;gap:12px;padding:13px 0;border-top:1px solid var(--line);}
+  .consultante:first-of-type{border-top:none;}
+  .c-info{flex:1;min-width:0;}
+  .c-nombre{font-size:14px;font-weight:600;}
+  .c-user{font-family:'DM Mono',monospace;font-size:11.5px;color:var(--ink-3);margin-top:1px;}
+  .c-estado{font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:3px 9px;border-radius:20px;flex-shrink:0;}
+  .c-estado.activo{background:rgba(31,157,107,0.12);color:var(--green);}
+  .c-estado.inactivo{background:rgba(133,146,180,0.15);color:var(--ink-3);}
+  .c-actions{display:flex;gap:6px;flex-shrink:0;}
+  .icon-btn{width:30px;height:30px;border-radius:8px;background:var(--chip);border:1px solid var(--line);color:var(--ink-2);cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .empty{color:var(--ink-3);font-size:13px;text-align:center;padding:20px 0;}
+  .hint{font-size:11.5px;color:var(--ink-3);margin-top:6px;line-height:1.5;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <div class="brand">NutriUst · <span>Panel</span></div>
+      <div class="sub">Alta de consultantes — NutriciónFit UST</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Crear consultante</h2>
+    <label>Nombre</label>
+    <input id="fNombre" placeholder="Ej: Sofía Fernández" oninput="sugerirUsuario()">
+    <label>Usuario</label>
+    <input id="fUsuario" placeholder="ej: sofia.fernandez">
+    <label>Contraseña</label>
+    <div class="row">
+      <input id="fPassword" placeholder="Contraseña simple">
+      <button class="btn-mini" onclick="generarPassword()">Generar</button>
+    </div>
+    <div class="hint">El consultante va a usar este usuario y contraseña para entrar a su Biblioteca de Recursos.</div>
+    <button class="btn" onclick="crearConsultante()">Crear consultante</button>
+    <div class="msg" id="msgCrear"></div>
+  </div>
+
+  <div class="card">
+    <div class="list-head">
+      <h2 style="margin:0">Consultantes</h2>
+      <span class="list-count" id="listCount">—</span>
+    </div>
+    <div id="lista"><div class="empty">Cargando…</div></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://ebtxzmwsuzzfkamxteyg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVidHh6bXdzdXp6ZmthbXh0ZXlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMDk0NTUsImV4cCI6MjA5Nzc4NTQ1NX0.nBgOxK1ThCDwhixzaUluP75p7RRQ5hfjp3ef1keaHqY';
+const NUTRICIONISTA_ID = '76574da7-324f-4030-9944-f21e66eb9e57';
+
+async function rpc(fn, args){
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method:'POST',
+    headers:{
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      'Content-Type':'application/json'
+    },
+    body: JSON.stringify(args)
+  });
+  const data = await res.json().catch(()=>null);
+  if(!res.ok){ throw new Error((data && (data.message || data.hint)) || 'Error de conexión'); }
+  return data;
+}
+
+function slugify(s){
+  return s.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9\s]/g,'')
+    .trim().replace(/\s+/g,'.');
+}
+function sugerirUsuario(){
+  const nombre = document.getElementById('fNombre').value;
+  document.getElementById('fUsuario').value = slugify(nombre);
+}
+function generarPassword(){
+  const palabras = ['sol','luna','rio','mar','flor','luz','cielo','verde','azul','fuerte'];
+  const p = palabras[Math.floor(Math.random()*palabras.length)] + Math.floor(1000+Math.random()*9000);
+  document.getElementById('fPassword').value = p;
+}
+
+function showMsg(id, text, ok){
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = 'msg ' + (ok ? 'ok' : 'err');
+}
+
+async function crearConsultante(){
+  const nombre = document.getElementById('fNombre').value.trim();
+  const username = document.getElementById('fUsuario').value.trim();
+  const password = document.getElementById('fPassword').value.trim();
+  if(!nombre || !username || !password){
+    showMsg('msgCrear','Completá nombre, usuario y contraseña.', false);
+    return;
+  }
+  try{
+    await rpc('admin_crear_consultante', {
+      p_nutricionista_id: NUTRICIONISTA_ID,
+      p_nombre: nombre,
+      p_username: username,
+      p_password: password
+    });
+    showMsg('msgCrear', `Listo — ${nombre} ya puede entrar con "${username}".`, true);
+    document.getElementById('fNombre').value = '';
+    document.getElementById('fUsuario').value = '';
+    document.getElementById('fPassword').value = '';
+    cargarLista();
+  }catch(e){
+    const dup = /duplicate|unique/i.test(e.message);
+    showMsg('msgCrear', dup ? 'Ese usuario ya existe — probá otro.' : ('Error: ' + e.message), false);
+  }
+}
+
+async function toggleEstado(id, estadoActual){
+  const nuevo = estadoActual === 'activo' ? 'inactivo' : 'activo';
+  await rpc('admin_set_estado_consultante', { p_id: id, p_estado: nuevo });
+  cargarLista();
+}
+
+async function cambiarPassword(id, nombre){
+  const nueva = prompt(`Nueva contraseña para ${nombre}:`);
+  if(!nueva) return;
+  await rpc('admin_set_password_consultante', { p_id: id, p_password: nueva.trim() });
+  alert('Contraseña actualizada.');
+}
+
+function renderConsultante(c){
+  const fecha = new Date(c.created_at).toLocaleDateString('es-AR', {day:'2-digit',month:'2-digit',year:'2-digit'});
+  return `<div class="consultante">
+    <div class="c-info">
+      <div class="c-nombre">${c.nombre}</div>
+      <div class="c-user">@${c.username || '—'} · desde ${fecha}</div>
+    </div>
+    <div class="c-estado ${c.estado}">${c.estado}</div>
+    <div class="c-actions">
+      <button class="icon-btn" title="Cambiar contraseña" onclick="cambiarPassword('${c.id}','${c.nombre.replace(/'/g,"")}')">🔑</button>
+      <button class="icon-btn" title="Activar/Desactivar" onclick="toggleEstado('${c.id}','${c.estado}')">⏻</button>
+    </div>
+  </div>`;
+}
+
+async function cargarLista(){
+  try{
+    const data = await rpc('admin_listar_consultantes', { p_nutricionista_id: NUTRICIONISTA_ID });
+    document.getElementById('listCount').textContent = data.length + (data.length===1?' consultante':' consultantes');
+    document.getElementById('lista').innerHTML = data.length
+      ? data.map(renderConsultante).join('')
+      : '<div class="empty">Todavía no creaste ningún consultante.</div>';
+  }catch(e){
+    document.getElementById('lista').innerHTML = '<div class="empty">Error cargando la lista.</div>';
+  }
+}
+
+cargarLista();
+</script>
+</body>
+</html>
