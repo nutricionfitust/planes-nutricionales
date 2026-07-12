@@ -88,7 +88,7 @@
   .toast.show{opacity:1;}
 
   /* ===== screen: reader ===== */
-  #screen-reader{position:fixed; inset:0; background:#FBFDFF; overflow-y:auto; -webkit-overflow-scrolling:touch; z-index:10; scroll-behavior:smooth; opacity:0; transform:translateY(28px); pointer-events:none; transition:opacity .32s ease, transform .38s cubic-bezier(.22,1,.36,1);}
+  #screen-reader{position:fixed; inset:0; background:#FBFDFF; overflow-y:auto; -webkit-overflow-scrolling:touch; z-index:10; opacity:0; transform:translateY(28px); pointer-events:none; transition:opacity .32s ease, transform .38s cubic-bezier(.22,1,.36,1);}
   #screen-reader.show{opacity:1; transform:translateY(0); pointer-events:auto;}
   .reader-top{position:sticky;top:0;z-index:5;background:rgba(251,253,255,0.82);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);}
   .reader-bar{max-width:900px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:14px 18px;}
@@ -97,6 +97,8 @@
   .progress-track{height:3px;background:var(--line);}
   .progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--blue),var(--blue-2));transition:width .08s linear;}
   .doc{max-width:640px;margin:0 auto;padding:28px 20px 100px;}
+  .iframe-wrap{width:100%; height:calc(100vh - 64px);}
+  .iframe-wrap iframe{width:100%; height:100%; border:none; display:block;}
   @media (min-width:900px){
     .doc{max-width:760px;padding:56px 40px 140px;font-size:16px;}
     .doc .reader-h1{font-size:32px;} .doc .block-h2{font-size:20px;} .doc .block-h3{font-size:16.5px;}
@@ -206,7 +208,7 @@
       <div class="resource" onclick="window.open('https://nutricionfitust.my.canva.site/gu-a-etiquetado-nutricional-nfu','_blank')"><div class="resource-dot"></div><div class="resource-title">Guía de Etiquetado Nutricional</div><div class="resource-tag">externo ↗</div></div>
       <div class="resource pending" onclick="showToast('Todavía no está cargado')"><div class="resource-dot"></div><div class="resource-title">Ideas de Comidas Transportables</div><div class="resource-tag">pronto</div></div>
       <div class="resource pending" onclick="showToast('Todavía no está cargado')"><div class="resource-dot"></div><div class="resource-title">Porciones de Intercambio</div><div class="resource-tag">pronto</div></div>
-      <div class="resource" onclick="window.open('https://sistema-de-puntos-hc-nfu.vercel.app/','_blank')"><div class="resource-dot"></div><div class="resource-title">Sistema de Puntos de Carbohidratos</div><div class="resource-tag">externo ↗</div></div>
+      <div class="resource" onclick="openReader('sistema-de-puntos')"><div class="resource-dot"></div><div class="resource-title">Sistema de Puntos de Carbohidratos</div><div class="resource-arrow">→</div></div>
     </div>
   </div>
 
@@ -226,9 +228,9 @@
     <div class="reader-bar">
       <div class="back-btn" onclick="closeReader()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></div>
       <div class="reader-crumb" id="readerCrumb">Nutrición Deportiva</div>
-      <div class="idx-btn" onclick="toggleDrawer(true)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div>
+      <div class="idx-btn" id="idxBtn" onclick="toggleDrawer(true)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div>
     </div>
-    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-track" id="progressTrack"><div class="progress-fill" id="progressFill"></div></div>
   </div>
   <div class="doc" id="doc">
     <div class="eyebrow" id="readerEyebrow">Nutrición Deportiva</div>
@@ -238,7 +240,8 @@
     <div class="idx-card" id="indexCard"></div>
     <div id="sections"></div>
   </div>
-  <div class="fab-row">
+  <div class="iframe-wrap" id="iframeWrap" style="display:none"><iframe id="toolIframe" src=""></iframe></div>
+  <div class="fab-row" id="fabRow">
     <button class="fab ghost" onclick="toggleDrawer(true)" title="Índice"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg></button>
     <button class="fab" onclick="alert('Acá va la exportación real a PDF una vez que conectemos el motor de render → print')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>Descargar PDF</button>
   </div>
@@ -251,8 +254,10 @@
 const h2=t=>({t:'h2',v:t}); const h3=(t,e='')=>({t:'h3',v:t,emoji:e}); const p=t=>({t:'p',v:t});
 const ul=a=>({t:'ul',v:a}); const ol=a=>({t:'ol',v:a}); const callout=(t,s=false)=>({t:'callout',v:t,strong:s});
 const xlink=(l,h,ext=true)=>({t:'xlink',v:l,href:h,external:ext});
+const ilink=(l,key)=>({t:'ilink',v:l,key});
 
 const RESOURCES = {
+'sistema-de-puntos': { type:'iframe', crumb:'Herramientas', src:'sistema-puntos.html' },
 'rendimiento-deportivo': {
   crumb:'Nutrición Deportiva', eyebrow:'Nutrición Deportiva',
   title:'Alimentación y Rendimiento Deportivo',
@@ -288,7 +293,7 @@ const RESOURCES = {
     'Entrenamientos de más de 90 minutos: se incorpora una estrategia de carbohidratos intra-entrenamiento para sostener el rendimiento y retrasar la fatiga.'
   ]),
   p('Dentro de este plan vas a encontrar referencias al Sistema de Puntos de Carbohidratos, un archivo complementario donde cada alimento tiene asignado un puntaje (1 punto = 1 g de hidrato de carbono). Eso te va a permitir armar tus comidas con criterio y sin contar calorías de forma obsesiva.'),
-  xlink('Sistema de Puntos de Carbohidratos','https://sistema-de-puntos-hc-nfu.vercel.app/'),
+  ilink('Sistema de Puntos de Carbohidratos','sistema-de-puntos'),
   h3('Grasas: rendimiento, hormonas y recuperación','✅'),
   p('Fundamentales para el equilibrio hormonal, la salud celular, la absorción de vitaminas liposolubles (A, D, E, K) y la saciedad. Las grasas se evitan en grandes cantidades cerca del entrenamiento, ya que enlentecen el vaciamiento gástrico y pueden generar malestar digestivo. Su mayor aporte lo ubicamos en comidas alejadas del esfuerzo físico: aceite de oliva, palta, frutos secos, semillas, yema de huevo, pescados grasos.'),
   h3('Distribución energética inteligente','✅'),
@@ -508,6 +513,10 @@ function blockHtml(b){
       const target = b.external ? ` target="_blank" rel="noopener"` : '';
       return `<div><a class="xlink" href="${b.href}"${target}>${icon}${b.v}</a></div>`;
     }
+    case 'ilink': {
+      const icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>`;
+      return `<div><a class="xlink" href="#" onclick="event.preventDefault();openReader('${b.key}')">${icon}${b.v}</a></div>`;
+    }
     default: return '';
   }
 }
@@ -532,10 +541,47 @@ function hexToRgba(hex, a){
   return `rgba(${r},${g},${b},${a})`;
 }
 let sectionObserver = null;
+function scrollToSection(id){
+  const container = document.getElementById('screen-reader');
+  const target = document.getElementById(id);
+  if(!container || !target) return;
+  const startY = container.scrollTop;
+  const targetY = target.offsetTop - 82; // header + breathing room
+  const dist = targetY - startY;
+  const duration = 420;
+  let startTime = null;
+  function step(ts){
+    if(!startTime) startTime = ts;
+    const t = Math.min((ts - startTime) / duration, 1);
+    const eased = t<0.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2; // easeInOutCubic
+    container.scrollTop = startY + dist*eased;
+    if(t < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
 function openReader(key){
   const r = RESOURCES[key];
   if(!r){ showToast('Todavía no está cargado'); return; }
   document.getElementById('readerCrumb').textContent = r.crumb;
+
+  if(r.type === 'iframe'){
+    document.getElementById('doc').style.display = 'none';
+    document.getElementById('idxBtn').style.display = 'none';
+    document.getElementById('progressTrack').style.display = 'none';
+    document.getElementById('fabRow').style.display = 'none';
+    document.getElementById('iframeWrap').style.display = 'block';
+    document.getElementById('toolIframe').src = r.src;
+    document.getElementById('screen-reader').classList.add('show');
+    return;
+  }
+  document.getElementById('doc').style.display = 'block';
+  document.getElementById('idxBtn').style.display = 'flex';
+  document.getElementById('progressTrack').style.display = 'block';
+  document.getElementById('fabRow').style.display = 'flex';
+  document.getElementById('iframeWrap').style.display = 'none';
+  document.getElementById('toolIframe').src = '';
+
   document.getElementById('readerH1').textContent = r.title;
   document.getElementById('readerSub').textContent = r.sub;
   document.getElementById('readerEyebrow').style.display = 'none';
@@ -551,9 +597,9 @@ function openReader(key){
     const opener = `<div class="chapter-open"><span class="chapter-eyebrow">${r.crumb}</span><div class="chapter-title">${sec.title}</div><div class="chapter-rule"></div></div>`;
     secEl.innerHTML = opener + sec.blocks.map(blockHtml).join('');
     sectionsEl.appendChild(secEl);
-    const row = `<a class="idx-item" href="#${sec.id}"><span class="idx-num" style="color:${color}">●</span>${sec.title}</a>`;
+    const row = `<a class="idx-item" href="#${sec.id}" onclick="event.preventDefault();scrollToSection('${sec.id}')"><span class="idx-num" style="color:${color}">●</span>${sec.title}</a>`;
     idxHtml += row;
-    drawerHtml += row.replace('href=', `onclick="toggleDrawer(false)" href=`);
+    drawerHtml += row.replace('onclick="', `onclick="toggleDrawer(false);`);
   });
   document.getElementById('indexCard').innerHTML = idxHtml;
   document.getElementById('drawerList').innerHTML = drawerHtml;
@@ -573,7 +619,10 @@ function openReader(key){
   }, { root: document.getElementById('screen-reader'), rootMargin: '-42% 0px -42% 0px', threshold: 0 });
   document.querySelectorAll('#sections .sec').forEach(el=>sectionObserver.observe(el));
 }
-function closeReader(){ document.getElementById('screen-reader').classList.remove('show'); }
+function closeReader(){
+  document.getElementById('screen-reader').classList.remove('show');
+  document.getElementById('toolIframe').src = '';
+}
 function toggleDrawer(open){ document.getElementById('idxDrawer').classList.toggle('show', open); }
 
 document.getElementById('screen-reader').addEventListener('scroll', function(){
