@@ -6,6 +6,7 @@
 <title>NutriUst — Nutrición Deportiva</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Serif+Display:ital@0;1&display=swap');
 
   :root{
     --blue:#0072FB; --blue-2:#6EA4FB; --blue-3:#99C5FF;
@@ -159,9 +160,10 @@
   @media (min-width:900px){ .chapter-title{font-size:42px;max-width:620px;} .chapter-open{padding:80px 20px 46px;} }
 
   /* ===== Sistema de Puntos (merged native screen) ===== */
-  #screen-sdp{display:none; position:fixed; inset:0; z-index:10; overflow-y:auto; -webkit-overflow-scrolling:touch;}
-  #screen-sdp.show{display:block;}
-  .sdp-back-btn{position:fixed; top:14px; left:14px; z-index:12; width:36px; height:36px; border-radius:11px; background:rgba(255,255,255,0.14); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.25); display:flex; align-items:center; justify-content:center; color:#fff; cursor:pointer;}
+  #screen-sdp{position:fixed; inset:0; z-index:10; overflow-y:auto; -webkit-overflow-scrolling:touch; opacity:0; transform:translateY(28px); pointer-events:none; transition:opacity .32s ease, transform .38s cubic-bezier(.22,1,.36,1);}
+  #screen-sdp.show{opacity:1; transform:translateY(0); pointer-events:auto;}
+  .sdp-back-btn{position:fixed; top:14px; left:14px; z-index:15; width:36px; height:36px; border-radius:11px; background:rgba(255,255,255,0.14); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.25); display:none; align-items:center; justify-content:center; color:#fff; cursor:pointer;}
+  .sdp-back-btn.show{display:flex;}
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -650,8 +652,8 @@
 </div>
 
 
+<div class="sdp-back-btn" id="sdpBackBtn" onclick="closeSDP()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></div>
 <div id="screen-sdp">
-  <div class="sdp-back-btn" onclick="closeSDP()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></div>
 <div class="brand-header">
   <a class="brand-logo" href="https://www.instagram.com/nutricionfitust/" target="_blank" title="Ir a Instagram NFU">
     <div class="brand-img-wrap" id="brand-img-wrap">
@@ -2583,8 +2585,8 @@ function closeReader(){
   document.getElementById('idxDrawer').classList.remove('show');
 }
 function toggleDrawer(open){ document.getElementById('idxDrawer').classList.toggle('show', open); }
-function openSDP(){ document.getElementById('screen-sdp').classList.add('show'); }
-function closeSDP(){ document.getElementById('screen-sdp').classList.remove('show'); }
+function openSDP(){ document.getElementById('screen-sdp').classList.add('show'); document.getElementById('sdpBackBtn').classList.add('show'); }
+function closeSDP(){ document.getElementById('screen-sdp').classList.remove('show'); document.getElementById('sdpBackBtn').classList.remove('show'); }
 
 document.getElementById('screen-reader').addEventListener('scroll', function(){
   const max = this.scrollHeight - this.clientHeight;
