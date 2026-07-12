@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>NutriUst — Panel de Consultantes</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
@@ -13,6 +13,7 @@
     --green:#1F9D6B; --red:#E5484D;
     --shadow:rgba(20,60,140,0.10);
   }
+  html{touch-action:manipulation;}
   *{box-sizing:border-box;}
   body{margin:0;font-family:'Plus Jakarta Sans',sans-serif;background:#FBFDFF;color:var(--ink-1);min-height:100vh;position:relative;overflow-x:hidden;}
   #bg{position:fixed;inset:0;z-index:-1;background:#FBFDFF;}
@@ -58,13 +59,22 @@
   .icon-btn:active{transform:scale(0.92);}
   .icon-btn.danger:hover{background:rgba(229,72,77,0.10);}
   .content-tree{font-size:13px;}
-  .ct-carpeta{font-weight:700;margin-top:14px;margin-bottom:4px;color:var(--ink-1);}
-  .ct-carpeta:first-child{margin-top:0;}
-  .ct-recurso{display:flex;align-items:center;gap:8px;padding:5px 0 5px 10px;color:var(--ink-2);border-left:2px solid var(--line);}
-  .ct-recurso .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
-  .ct-recurso .dot.on{background:var(--green);}
-  .ct-recurso .dot.off{background:var(--ink-3);}
-  .ct-recurso .who{margin-left:auto;font-family:'DM Mono',monospace;font-size:10.5px;color:var(--ink-3);}
+  .cf-folder{border:1px solid var(--line);border-radius:14px;margin-bottom:10px;overflow:hidden;}
+  .cf-head{display:flex;align-items:center;gap:10px;padding:13px 14px;cursor:pointer;}
+  .cf-name{font-weight:700;font-size:13.5px;flex:1;}
+  .cf-count{font-family:'DM Mono',monospace;font-size:10.5px;color:var(--ink-3);}
+  .cf-chev{transition:transform .2s ease;color:var(--ink-3);flex-shrink:0;}
+  .cf-folder.open .cf-chev{transform:rotate(180deg);}
+  .cf-list{max-height:0;overflow:hidden;transition:max-height .28s ease;}
+  .cf-folder.open .cf-list{max-height:600px;}
+  .cf-resource{display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--line);cursor:pointer;transition:background .15s ease;}
+  .cf-resource:hover{background:var(--chip);}
+  .cf-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+  .cf-dot.on{background:var(--green);}
+  .cf-dot.off{background:var(--ink-3);}
+  .cf-title{flex:1;font-size:13px;}
+  .cf-who{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink-3);}
+  .cf-arrow{color:var(--blue);font-size:14px;}
   .empty{color:var(--ink-3);font-size:13px;text-align:center;padding:20px 0;}
   .hint{font-size:11.5px;color:var(--ink-3);margin-top:6px;line-height:1.5;}
   #screen-login{max-width:380px;margin:80px auto 0;}
@@ -117,7 +127,7 @@
     <div class="msg" id="msgChangePw"></div>
   </div>
 
-  <div class="card">
+  <div class="card" id="cardCrear">
     <h2>Crear consultante</h2>
     <label>Nombre</label>
     <input id="fNombre" placeholder="Ej: Sofía Fernández" oninput="sugerirUsuario()">
@@ -311,7 +321,7 @@ async function crearConsultante(){
       p_username: username,
       p_password: password
     });
-    showMsg('msgCrear', `Listo — ${nombre} ya puede entrar con "${username}".`, true);
+    document.getElementById('msgCrear').className = 'msg';
     document.getElementById('fNombre').value = '';
     document.getElementById('fUsuario').value = '';
     document.getElementById('fPassword').value = '';
@@ -406,6 +416,11 @@ async function cargarLista(){
   }
 }
 
+function toggleContentFolder(i){
+  document.querySelectorAll('.cf-folder').forEach(f=>{ if(parseInt(f.dataset.idx)!==i) f.classList.remove('open'); });
+  document.querySelector('.cf-folder[data-idx="'+i+'"]').classList.toggle('open');
+}
+
 async function cargarContenido(){
   try{
     const rows = await rpc('admin_ver_contenido', { p_nutricionista_id: NUTRICIONISTA_ID });
@@ -416,17 +431,24 @@ async function cargarContenido(){
       if(r.recurso_id) byCarpeta[r.carpeta_id].items.push(r);
     });
     let html = '';
-    orden.forEach(cid=>{
+    orden.forEach((cid, i)=>{
       const carpeta = byCarpeta[cid];
-      html += `<div class="ct-carpeta">${carpeta.nombre}</div>`;
-      if(!carpeta.items.length){
-        html += `<div class="ct-recurso" style="color:var(--ink-3)">— sin recursos todavía</div>`;
-      } else {
-        carpeta.items.forEach(it=>{
-          const who = it.consultante_id ? it.consultante_nombre : 'compartido';
-          html += `<div class="ct-recurso"><span class="dot ${it.activo?'on':'off'}"></span>${it.titulo}<span class="who">${who}</span></div>`;
-        });
-      }
+      const activos = carpeta.items.filter(it=>it.activo).length;
+      const countLabel = carpeta.items.length ? `${activos} de ${carpeta.items.length}` : '— vacía';
+      const itemsHtml = carpeta.items.length
+        ? carpeta.items.map(it=>{
+            const who = it.consultante_id ? it.consultante_nombre : 'compartido';
+            return `<div class="cf-resource" onclick="verComoConsultante()"><span class="cf-dot ${it.activo?'on':'off'}"></span><span class="cf-title">${it.titulo}</span><span class="cf-who">${who}</span><span class="cf-arrow">→</span></div>`;
+          }).join('')
+        : `<div class="cf-resource" style="cursor:default;color:var(--ink-3)">Sin recursos todavía</div>`;
+      html += `<div class="cf-folder" data-idx="${i}">
+        <div class="cf-head" onclick="toggleContentFolder(${i})">
+          <span class="cf-name">${carpeta.nombre}</span>
+          <span class="cf-count">${countLabel}</span>
+          <svg class="cf-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="cf-list">${itemsHtml}</div>
+      </div>`;
     });
     document.getElementById('contentTree').innerHTML = html || '<div class="empty">Todavía no tenés carpetas.</div>';
   }catch(e){
@@ -434,6 +456,22 @@ async function cargarContenido(){
   }
 }
 
+function verComoConsultante(){
+  window.location.href = '/prototypes/plan_nutricional_reader.html';
+}
+
+function enterSubmits(containerId, callback){
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  el.addEventListener('keydown', e=>{
+    if(e.key === 'Enter' && e.target.tagName === 'INPUT'){ e.preventDefault(); callback(); }
+  });
+}
+enterSubmits('screen-login', handleLoginSubmit);
+enterSubmits('cardChangePw', cambiarMiPassword);
+enterSubmits('cardCrear', crearConsultante);
+
+document.addEventListener('gesturestart', e=> e.preventDefault());
 initLogin();
 </script>
 </body>
