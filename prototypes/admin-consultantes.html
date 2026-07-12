@@ -14,7 +14,13 @@
     --shadow:rgba(20,60,140,0.10);
   }
   *{box-sizing:border-box;}
-  body{margin:0;font-family:'Plus Jakarta Sans',sans-serif;background:#F6FAFF;color:var(--ink-1);min-height:100vh;}
+  body{margin:0;font-family:'Plus Jakarta Sans',sans-serif;background:#FBFDFF;color:var(--ink-1);min-height:100vh;position:relative;overflow-x:hidden;}
+  #bg{position:fixed;inset:0;z-index:-1;background:#FBFDFF;}
+  #bg::before,#bg::after{content:'';position:absolute;border-radius:50%;filter:blur(70px);}
+  #bg::before{top:-15%;left:-12%;width:60vw;height:60vw;background:radial-gradient(circle,rgba(0,114,251,0.14) 0%,transparent 70%);}
+  #bg::after{bottom:-18%;right:-12%;width:55vw;height:55vw;background:radial-gradient(circle,rgba(110,164,251,0.14) 0%,transparent 70%);}
+  #screen-login, #screen-panel{transition:opacity .32s ease, transform .38s cubic-bezier(.22,1,.36,1);}
+  #screen-login.hide, #screen-panel.hide{opacity:0; transform:translateY(14px); pointer-events:none; height:0; overflow:hidden;}
   .wrap{max-width:640px;margin:0 auto;padding:28px 18px 60px;}
   .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;}
   .brand{font-size:19px;font-weight:800;letter-spacing:-0.01em;}
@@ -36,16 +42,29 @@
   .msg.err{display:block;background:rgba(229,72,77,0.08);color:var(--red);border:1px solid rgba(229,72,77,0.25);}
   .list-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;}
   .list-count{font-family:'DM Mono',monospace;font-size:11px;color:var(--ink-3);}
-  .consultante{display:flex;align-items:center;gap:12px;padding:13px 0;border-top:1px solid var(--line);}
+  .consultante{display:flex;align-items:center;gap:12px;padding:13px 0;border-top:1px solid var(--line);overflow:hidden;transition:opacity .3s ease, max-height .3s ease, padding .3s ease, margin .3s ease;max-height:80px;opacity:1;}
   .consultante:first-of-type{border-top:none;}
+  .consultante.entering{opacity:0; max-height:0; padding-top:0; padding-bottom:0;}
+  .consultante.leaving{opacity:0; max-height:0!important; padding-top:0!important; padding-bottom:0!important; border-top-color:transparent;}
   .c-info{flex:1;min-width:0;}
   .c-nombre{font-size:14px;font-weight:600;}
   .c-user{font-family:'DM Mono',monospace;font-size:11.5px;color:var(--ink-3);margin-top:1px;}
-  .c-estado{font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:3px 9px;border-radius:20px;flex-shrink:0;}
+  .c-pass{font-family:'DM Mono',monospace;font-size:11px;color:var(--blue);margin-top:2px;background:var(--chip);display:inline-block;padding:1px 7px;border-radius:6px;}
+  .c-estado{font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:3px 9px;border-radius:20px;flex-shrink:0;transition:background .25s ease, color .25s ease;}
   .c-estado.activo{background:rgba(31,157,107,0.12);color:var(--green);}
   .c-estado.inactivo{background:rgba(133,146,180,0.15);color:var(--ink-3);}
   .c-actions{display:flex;gap:6px;flex-shrink:0;}
-  .icon-btn{width:30px;height:30px;border-radius:8px;background:var(--chip);border:1px solid var(--line);color:var(--ink-2);cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .icon-btn{width:30px;height:30px;border-radius:8px;background:var(--chip);border:1px solid var(--line);color:var(--ink-2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s ease, transform .1s ease;}
+  .icon-btn:active{transform:scale(0.92);}
+  .icon-btn.danger:hover{background:rgba(229,72,77,0.10);}
+  .content-tree{font-size:13px;}
+  .ct-carpeta{font-weight:700;margin-top:14px;margin-bottom:4px;color:var(--ink-1);}
+  .ct-carpeta:first-child{margin-top:0;}
+  .ct-recurso{display:flex;align-items:center;gap:8px;padding:5px 0 5px 10px;color:var(--ink-2);border-left:2px solid var(--line);}
+  .ct-recurso .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+  .ct-recurso .dot.on{background:var(--green);}
+  .ct-recurso .dot.off{background:var(--ink-3);}
+  .ct-recurso .who{margin-left:auto;font-family:'DM Mono',monospace;font-size:10.5px;color:var(--ink-3);}
   .empty{color:var(--ink-3);font-size:13px;text-align:center;padding:20px 0;}
   .hint{font-size:11.5px;color:var(--ink-3);margin-top:6px;line-height:1.5;}
   #screen-login{max-width:380px;margin:80px auto 0;}
@@ -57,6 +76,7 @@
 </style>
 </head>
 <body>
+<div id="bg"></div>
 <div id="screen-login">
   <div class="wrap" style="padding-top:0;">
     <div class="top"><div><div class="brand">NutriUst · <span>Panel</span></div></div></div>
@@ -70,7 +90,7 @@
   </div>
 </div>
 
-<div id="screen-panel" style="display:none;">
+<div id="screen-panel" class="hide">
 <div class="wrap">
   <div class="session-bar">
     <span id="sessionWho"></span>
@@ -119,6 +139,11 @@
       <span class="list-count" id="listCount">—</span>
     </div>
     <div id="lista"><div class="empty">Cargando…</div></div>
+  </div>
+
+  <div class="card">
+    <h2>Tus carpetas y recursos</h2>
+    <div class="content-tree" id="contentTree"><div class="empty">Cargando…</div></div>
   </div>
 </div>
 </div>
@@ -197,16 +222,17 @@ async function handleLoginSubmit(){
 
 function iniciarSesion(who){
   sessionStorage.setItem('nfu_admin_session', 'true');
-  document.getElementById('screen-login').style.display = 'none';
-  document.getElementById('screen-panel').style.display = 'block';
+  document.getElementById('screen-login').classList.add('hide');
+  document.getElementById('screen-panel').classList.remove('hide');
   document.getElementById('sessionWho').textContent = 'Conectado como ' + who;
   cargarLista();
+  cargarContenido();
 }
 
 function logout(){
   sessionStorage.removeItem('nfu_admin_session');
-  document.getElementById('screen-panel').style.display = 'none';
-  document.getElementById('screen-login').style.display = 'block';
+  document.getElementById('screen-panel').classList.add('hide');
+  document.getElementById('screen-login').classList.remove('hide');
   document.getElementById('liPassword') && (document.getElementById('liPassword').value = '');
 }
 
@@ -240,10 +266,11 @@ async function initLogin(){
   }catch(e){ modoSetup = false; }
   renderLoginFields();
   if(sessionStorage.getItem('nfu_admin_session') === 'true' && !modoSetup){
-    document.getElementById('screen-login').style.display = 'none';
-    document.getElementById('screen-panel').style.display = 'block';
+    document.getElementById('screen-login').classList.add('hide');
+    document.getElementById('screen-panel').classList.remove('hide');
     document.getElementById('sessionWho').textContent = 'Conectado';
     cargarLista();
+    cargarContenido();
   }
 }
 
@@ -278,7 +305,7 @@ async function crearConsultante(){
     return;
   }
   try{
-    await rpc('admin_crear_consultante', {
+    const newId = await rpc('admin_crear_consultante', {
       p_nutricionista_id: NUTRICIONISTA_ID,
       p_nombre: nombre,
       p_username: username,
@@ -288,7 +315,22 @@ async function crearConsultante(){
     document.getElementById('fNombre').value = '';
     document.getElementById('fUsuario').value = '';
     document.getElementById('fPassword').value = '';
-    cargarLista();
+
+    const lista = document.getElementById('lista');
+    const emptyEl = lista.querySelector('.empty');
+    if(emptyEl) lista.innerHTML = '';
+    const nuevo = { id:newId, nombre, username, password, estado:'activo', created_at:new Date().toISOString() };
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = renderConsultante(nuevo);
+    const el = wrapper.firstElementChild;
+    el.classList.add('entering');
+    lista.prepend(el);
+    requestAnimationFrame(()=> requestAnimationFrame(()=> el.classList.remove('entering')));
+
+    const countEl = document.getElementById('listCount');
+    const current = lista.querySelectorAll('.consultante').length;
+    countEl.textContent = current + (current===1?' consultante':' consultantes');
+    cargarContenido();
   }catch(e){
     const dup = /duplicate|unique/i.test(e.message);
     showMsg('msgCrear', dup ? 'Ese usuario ya existe — probá otro.' : ('Error: ' + e.message), false);
@@ -298,27 +340,56 @@ async function crearConsultante(){
 async function toggleEstado(id, estadoActual){
   const nuevo = estadoActual === 'activo' ? 'inactivo' : 'activo';
   await rpc('admin_set_estado_consultante', { p_id: id, p_estado: nuevo });
-  cargarLista();
+  const badge = document.getElementById('estado-'+id);
+  if(badge){
+    badge.textContent = nuevo;
+    badge.className = 'c-estado ' + nuevo;
+  }
+  const btn = document.querySelector(`.consultante[data-id="${id}"] button[title="Activar/Desactivar"]`);
+  if(btn) btn.setAttribute('onclick', `toggleEstado('${id}','${nuevo}')`);
+}
+
+async function eliminarConsultante(id, nombre){
+  if(!confirm(`¿Eliminar a ${nombre}? No se puede deshacer.`)) return;
+  try{
+    await rpc('admin_eliminar_consultante', { p_id: id });
+    const el = document.querySelector(`.consultante[data-id="${id}"]`);
+    if(el){
+      el.classList.add('leaving');
+      setTimeout(()=>{
+        el.remove();
+        const lista = document.getElementById('lista');
+        const current = lista.querySelectorAll('.consultante').length;
+        document.getElementById('listCount').textContent = current + (current===1?' consultante':' consultantes');
+        if(!current) lista.innerHTML = '<div class="empty">Todavía no creaste ningún consultante.</div>';
+      }, 320);
+    }
+  }catch(e){
+    alert('No se pudo eliminar: ' + e.message);
+  }
 }
 
 async function cambiarPassword(id, nombre){
   const nueva = prompt(`Nueva contraseña para ${nombre}:`);
   if(!nueva) return;
   await rpc('admin_set_password_consultante', { p_id: id, p_password: nueva.trim() });
-  alert('Contraseña actualizada.');
+  const chip = document.getElementById('pass-'+id);
+  if(chip) chip.textContent = nueva.trim();
 }
 
 function renderConsultante(c){
   const fecha = new Date(c.created_at).toLocaleDateString('es-AR', {day:'2-digit',month:'2-digit',year:'2-digit'});
-  return `<div class="consultante">
+  return `<div class="consultante" data-id="${c.id}">
     <div class="c-info">
       <div class="c-nombre">${c.nombre}</div>
       <div class="c-user">@${c.username || '—'} · desde ${fecha}</div>
+      <div class="c-pass" id="pass-${c.id}">${c.password || '—'}</div>
     </div>
-    <div class="c-estado ${c.estado}">${c.estado}</div>
+    <div class="c-estado ${c.estado}" id="estado-${c.id}">${c.estado}</div>
     <div class="c-actions">
       <button class="icon-btn" title="Cambiar contraseña" onclick="cambiarPassword('${c.id}','${c.nombre.replace(/'/g,"")}')">🔑</button>
       <button class="icon-btn" title="Activar/Desactivar" onclick="toggleEstado('${c.id}','${c.estado}')">⏻</button>
+      <button class="icon-btn danger" title="Eliminar" onclick="eliminarConsultante('${c.id}','${c.nombre.replace(/'/g,"")}')">🗑️</button>
     </div>
   </div>`;
 }
@@ -332,6 +403,34 @@ async function cargarLista(){
       : '<div class="empty">Todavía no creaste ningún consultante.</div>';
   }catch(e){
     document.getElementById('lista').innerHTML = '<div class="empty">Error cargando la lista.</div>';
+  }
+}
+
+async function cargarContenido(){
+  try{
+    const rows = await rpc('admin_ver_contenido', { p_nutricionista_id: NUTRICIONISTA_ID });
+    const byCarpeta = {};
+    const orden = [];
+    rows.forEach(r=>{
+      if(!byCarpeta[r.carpeta_id]){ byCarpeta[r.carpeta_id] = { nombre:r.carpeta_nombre, items:[] }; orden.push(r.carpeta_id); }
+      if(r.recurso_id) byCarpeta[r.carpeta_id].items.push(r);
+    });
+    let html = '';
+    orden.forEach(cid=>{
+      const carpeta = byCarpeta[cid];
+      html += `<div class="ct-carpeta">${carpeta.nombre}</div>`;
+      if(!carpeta.items.length){
+        html += `<div class="ct-recurso" style="color:var(--ink-3)">— sin recursos todavía</div>`;
+      } else {
+        carpeta.items.forEach(it=>{
+          const who = it.consultante_id ? it.consultante_nombre : 'compartido';
+          html += `<div class="ct-recurso"><span class="dot ${it.activo?'on':'off'}"></span>${it.titulo}<span class="who">${who}</span></div>`;
+        });
+      }
+    });
+    document.getElementById('contentTree').innerHTML = html || '<div class="empty">Todavía no tenés carpetas.</div>';
+  }catch(e){
+    document.getElementById('contentTree').innerHTML = '<div class="empty">Error cargando el contenido.</div>';
   }
 }
 
