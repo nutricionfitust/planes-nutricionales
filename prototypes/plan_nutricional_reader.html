@@ -593,8 +593,9 @@
 <div id="screen-folders" style="display:none;">
   <div class="top">
     <div>
-      <div class="greet">Hola, <span id="nombreConsultante">…</span></div>
+      <div class="greet" id="greetLine">Hola, <span id="nombreConsultante">…</span></div>
       <div class="sub" id="subGreeting">Francisco compartió estos recursos con vos</div>
+      <a href="/prototypes/admin-consultantes.html" id="volverPanelLink" style="display:none;font-size:12px;color:var(--blue);font-weight:600;text-decoration:none;">← Volver al panel</a>
     </div>
     <div class="avatar" id="avatarIniciales">··</div>
   </div>
@@ -2197,6 +2198,7 @@ function closeInfo(){
 <script>
 const SUPABASE_URL = 'https://ebtxzmwsuzzfkamxteyg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVidHh6bXdzdXp6ZmthbXh0ZXlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMDk0NTUsImV4cCI6MjA5Nzc4NTQ1NX0.nBgOxK1ThCDwhixzaUluP75p7RRQ5hfjp3ef1keaHqY';
+const NUTRICIONISTA_ID = '76574da7-324f-4030-9944-f21e66eb9e57';
 
 async function rpc(fn, args){
   const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
@@ -2326,13 +2328,37 @@ function mostrarApp(consultanteId, nombre){
   cargarDatosConsultante(consultanteId);
 }
 
+async function mostrarAppAdmin(){
+  document.getElementById('screen-login').style.display = 'none';
+  document.getElementById('screen-folders').style.display = 'block';
+  document.getElementById('greetLine').textContent = 'Vista de administrador';
+  document.getElementById('subGreeting').textContent = 'Así ven tus consultantes los recursos compartidos';
+  document.getElementById('avatarIniciales').textContent = 'AD';
+  document.getElementById('volverPanelLink').style.display = 'inline-block';
+  try{
+    const [carpetas, recursos] = await Promise.all([
+      rpc('admin_ver_carpetas', { p_nutricionista_id: NUTRICIONISTA_ID }),
+      rpc('admin_ver_recursos_compartidos', { p_nutricionista_id: NUTRICIONISTA_ID })
+    ]);
+    window.CARPETAS_DATA = carpetas;
+    window.RECURSOS_DATA = recursos;
+    renderFolders(carpetas, recursos);
+  }catch(e){
+    document.getElementById('foldersContainer').innerHTML = '<div class="folders-loading">No se pudo cargar la vista previa.</div>';
+  }
+}
+
 function initApp(){
+  if(sessionStorage.getItem('nfu_admin_session') === 'true'){
+    mostrarAppAdmin();
+    return;
+  }
   const cid = sessionStorage.getItem('nfu_consultante_id');
   const nombre = sessionStorage.getItem('nfu_consultante_nombre');
   if(cid && nombre){
     mostrarApp(cid, nombre);
   }
-  document.getElementById('liPass') && document.getElementById('liPass').addEventListener('keydown', e=>{ if(e.key==='Enter') handleConsultanteLogin(); });
+  document.getElementById('screen-login') && document.getElementById('screen-login').addEventListener('keydown', e=>{ if(e.key==='Enter' && e.target.tagName==='INPUT'){ e.preventDefault(); handleConsultanteLogin(); } });
 }
 
 let toastTimer;
