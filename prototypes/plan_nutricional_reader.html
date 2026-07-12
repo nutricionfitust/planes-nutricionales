@@ -88,7 +88,7 @@
   .toast.show{opacity:1;}
 
   /* ===== screen: reader ===== */
-  #screen-reader{position:fixed; inset:0; background:#FBFDFF; overflow-y:auto; -webkit-overflow-scrolling:touch; z-index:10; opacity:0; transform:translateY(28px); pointer-events:none; transition:opacity .32s ease, transform .38s cubic-bezier(.22,1,.36,1);}
+  #screen-reader{position:fixed; inset:0; background:#FBFDFF; overflow-y:auto; -webkit-overflow-scrolling:touch; z-index:10; opacity:0; transform:translateY(28px); pointer-events:none; transition:opacity .32s ease, transform .38s cubic-bezier(.22,1,.36,1); display:flex; flex-direction:column;}
   #screen-reader.show{opacity:1; transform:translateY(0); pointer-events:auto;}
   .reader-top{position:sticky;top:0;z-index:5;background:rgba(251,253,255,0.82);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);}
   .reader-bar{max-width:900px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:14px 18px;}
@@ -97,7 +97,7 @@
   .progress-track{height:3px;background:var(--line);}
   .progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--blue),var(--blue-2));transition:width .08s linear;}
   .doc{max-width:640px;margin:0 auto;padding:28px 20px 100px;}
-  .iframe-wrap{width:100%; height:calc(100vh - 64px);}
+  .iframe-wrap{flex:1; min-height:0;}
   .iframe-wrap iframe{width:100%; height:100%; border:none; display:block;}
   @media (min-width:900px){
     .doc{max-width:760px;padding:56px 40px 140px;font-size:16px;}
@@ -172,7 +172,7 @@
     <div class="avatar" id="avatarIniciales">SU</div>
   </div>
 
-  <div class="folder open" data-folder="0">
+  <div class="folder" data-folder="0">
     <div class="folder-head" onclick="toggleFolder(0)">
       <div class="folder-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0072FB" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
       <div class="folder-meta"><div class="folder-name">Nutrición Deportiva</div><div class="folder-count">1 de 2 listos</div></div>
