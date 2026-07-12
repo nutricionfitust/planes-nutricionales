@@ -1,5 +1,5 @@
 {
   "rewrites": [
-    { "source": "/", "destination": "/prototypes/plan_nutricional_reader.html" }
+    { "source": "/", "destination": "/prototypes/index.html" }
   ]
 }
