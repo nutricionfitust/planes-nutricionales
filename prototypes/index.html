@@ -45,7 +45,7 @@
   </div>
   <div id="setupNotice" style="display:none;">
     <p style="font-size:13.5px;color:var(--ink-2);line-height:1.5;margin:0 0 4px;">Todavía no configuraste tu acceso de administrador.</p>
-    <a class="btn" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box;" href="admin-consultantes.html">Configurar mi acceso</a>
+    <a class="btn" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box;" href="/prototypes/admin-consultantes.html">Configurar mi acceso</a>
   </div>
   <div class="msg" id="msg"></div>
   <div class="spinner" id="spinner">verificando…</div>
@@ -90,7 +90,7 @@ async function handleSubmit(){
     const admin = await rpc('login_nutricionista', { p_identificador: ident, p_password: pass });
     if(admin && admin.length){
       sessionStorage.setItem('nfu_admin_session', 'true');
-      window.location.href = 'admin-consultantes.html';
+      window.location.href = '/prototypes/admin-consultantes.html';
       return;
     }
     // 2) ¿es un consultante?
@@ -98,7 +98,7 @@ async function handleSubmit(){
     if(consultante && consultante.length){
       sessionStorage.setItem('nfu_consultante_id', consultante[0].id);
       sessionStorage.setItem('nfu_consultante_nombre', consultante[0].nombre);
-      window.location.href = 'plan_nutricional_reader.html';
+      window.location.href = '/prototypes/plan_nutricional_reader.html';
       return;
     }
     showMsg('Usuario/email o contraseña incorrectos.');
