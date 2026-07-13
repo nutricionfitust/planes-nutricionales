@@ -158,9 +158,10 @@
   .fab{flex:1;background:var(--blue);color:#fff;border:none;border-radius:14px;padding:15px 16px;font-family:'Plus Jakarta Sans';font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:7px;box-shadow:0 14px 30px rgba(0,114,251,0.30);cursor:pointer;}
   .fab.ghost{background:#fff;color:var(--blue);border:1.5px solid var(--blue);box-shadow:0 8px 22px var(--shadow);flex:0 0 auto;width:52px;}
   .fab svg{width:16px;height:16px;}
-  #idxDrawer{position:fixed;inset:0;z-index:20;display:none;background:rgba(11,27,51,0.35);backdrop-filter:blur(2px);}
-  #idxDrawer.show{display:block;}
-  .drawer-panel{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw, 420px);max-height:80vh;overflow-y:auto;background:#fff;border-radius:20px;padding:10px 6px 16px;box-shadow:0 30px 70px rgba(11,27,51,0.35);}
+  #idxDrawer{position:fixed;inset:0;z-index:20;background:rgba(11,27,51,0.35);backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity .28s ease;}
+  #idxDrawer.show{opacity:1;pointer-events:auto;}
+  .drawer-panel{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(0.94);width:min(92vw, 420px);max-height:80vh;overflow-y:auto;background:#fff;border-radius:20px;padding:10px 6px 16px;box-shadow:0 30px 70px rgba(11,27,51,0.35);transition:transform .28s cubic-bezier(.22,1,.36,1);}
+  #idxDrawer.show .drawer-panel{transform:translate(-50%,-50%) scale(1);}
   .drawer-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 8px;}
   .drawer-head b{font-size:14px;}
   .drawer-close{width:28px;height:28px;border-radius:8px;background:var(--chip);border:none;color:var(--blue);cursor:pointer;}
@@ -2316,7 +2317,7 @@ function renderFolders(carpetas, recursos){
         return `<div class="resource" onclick="openSDP()"><div class="resource-dot"></div><div class="resource-title">${r.titulo}</div><div class="resource-arrow">→</div></div>`;
       }
       if(contenido.tipo === 'externo'){
-        return `<div class="resource" onclick="window.open('${contenido.url}','_blank')"><div class="resource-dot"></div><div class="resource-title">${r.titulo}</div><div class="resource-tag">externo ↗</div></div>`;
+        return `<a class="resource" href="${contenido.url}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit;"><div class="resource-dot"></div><div class="resource-title">${r.titulo}</div><div class="resource-tag">externo ↗</div></a>`;
       }
       return `<div class="resource" onclick="openRecurso('${r.id}')"><div class="resource-dot"></div><div class="resource-title">${r.titulo}</div><div class="resource-arrow">→</div></div>`;
     }).join('');
@@ -2388,6 +2389,7 @@ async function cambiarMiPasswordConsultante(){
       msgEl.style.cssText = 'margin-top:12px;font-size:13px;display:block;color:#1F9D6B;';
       document.getElementById('cpcActual').value = '';
       document.getElementById('cpcNueva').value = '';
+      setTimeout(cerrarCambiarPasswordConsultante, 700);
     } else {
       msgEl.textContent = 'La contraseña actual no coincide.';
       msgEl.style.cssText = 'margin-top:12px;font-size:13px;display:block;color:#E5484D;';
