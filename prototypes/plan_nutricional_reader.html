@@ -2334,7 +2334,9 @@ async function mostrarAppAdmin(){
   document.getElementById('greetLine').textContent = 'Vista de administrador';
   document.getElementById('subGreeting').textContent = 'Así ven tus consultantes los recursos compartidos';
   document.getElementById('avatarIniciales').textContent = 'AD';
-  document.getElementById('volverPanelLink').style.display = 'inline-block';
+  if(window.self === window.top){
+    document.getElementById('volverPanelLink').style.display = 'inline-block';
+  }
   try{
     const [carpetas, recursos] = await Promise.all([
       rpc('admin_ver_carpetas', { p_nutricionista_id: NUTRICIONISTA_ID }),
@@ -2343,6 +2345,8 @@ async function mostrarAppAdmin(){
     window.CARPETAS_DATA = carpetas;
     window.RECURSOS_DATA = recursos;
     renderFolders(carpetas, recursos);
+    const openId = new URLSearchParams(window.location.search).get('open');
+    if(openId) openRecurso(openId);
   }catch(e){
     document.getElementById('foldersContainer').innerHTML = '<div class="folders-loading">No se pudo cargar la vista previa.</div>';
   }
