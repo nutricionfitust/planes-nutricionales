@@ -600,6 +600,7 @@
       <div class="greet" id="greetLine">Hola, <span id="nombreConsultante">…</span></div>
       <div class="sub" id="subGreeting">Francisco compartió estos recursos con vos</div>
       <a href="/prototypes/admin-consultantes.html" id="volverPanelLink" style="display:none;font-size:12px;color:var(--blue);font-weight:600;text-decoration:none;">← Volver al panel</a>
+      <button onclick="logoutConsultante()" id="salirConsultanteBtn" style="display:none;font-size:12px;color:var(--ink-3);font-weight:600;background:none;border:none;padding:0;cursor:pointer;">Salir</button>
     </div>
     <div class="avatar" id="avatarIniciales">··</div>
   </div>
@@ -2262,8 +2263,8 @@ async function handleConsultanteLogin(){
   try{
     const rows = await rpc('login_consultante', { p_username: user, p_password: pass });
     if(!rows || !rows.length){ msgEl.textContent='Usuario o contraseña incorrectos.'; msgEl.classList.add('show'); return; }
-    sessionStorage.setItem('nfu_consultante_id', rows[0].id);
-    sessionStorage.setItem('nfu_consultante_nombre', rows[0].nombre);
+    localStorage.setItem('nfu_consultante_id', rows[0].id);
+    localStorage.setItem('nfu_consultante_nombre', rows[0].nombre);
     mostrarApp(rows[0].id, rows[0].nombre);
   }catch(e){
     msgEl.textContent = 'Error: ' + e.message; msgEl.classList.add('show');
@@ -2329,17 +2330,29 @@ function mostrarApp(consultanteId, nombre){
   document.getElementById('screen-folders').style.display = 'block';
   document.getElementById('nombreConsultante').textContent = nombre;
   document.getElementById('avatarIniciales').textContent = iniciales(nombre);
+  document.getElementById('salirConsultanteBtn').style.display = 'inline-block';
   cargarDatosConsultante(consultanteId);
+}
+
+function logoutConsultante(){
+  localStorage.removeItem('nfu_consultante_id');
+  localStorage.removeItem('nfu_consultante_nombre');
+  window.location.href = '/prototypes/index.html';
 }
 
 async function mostrarAppAdmin(){
   document.getElementById('screen-login').style.display = 'none';
-  document.getElementById('screen-folders').style.display = 'block';
-  document.getElementById('greetLine').textContent = 'Tus carpetas y recursos';
-  document.getElementById('subGreeting').textContent = 'NutriciónFit UST';
-  document.getElementById('avatarIniciales').textContent = 'AD';
-  if(window.self === window.top){
-    document.getElementById('volverPanelLink').style.display = 'inline-block';
+  const openId = new URLSearchParams(window.location.search).get('open');
+  const deepLinkFromParent = openId && window.self !== window.top;
+
+  if(!deepLinkFromParent){
+    document.getElementById('screen-folders').style.display = 'block';
+    document.getElementById('greetLine').textContent = 'Tus carpetas y recursos';
+    document.getElementById('subGreeting').textContent = 'NutriciónFit UST';
+    document.getElementById('avatarIniciales').textContent = 'AD';
+    if(window.self === window.top){
+      document.getElementById('volverPanelLink').style.display = 'inline-block';
+    }
   }
   try{
     const [carpetas, recursos] = await Promise.all([
@@ -2348,11 +2361,10 @@ async function mostrarAppAdmin(){
     ]);
     window.CARPETAS_DATA = carpetas;
     window.RECURSOS_DATA = recursos;
-    renderFolders(carpetas, recursos);
-    const openId = new URLSearchParams(window.location.search).get('open');
+    if(!deepLinkFromParent) renderFolders(carpetas, recursos);
     if(openId) openRecurso(openId);
   }catch(e){
-    document.getElementById('foldersContainer').innerHTML = '<div class="folders-loading">No se pudo cargar la vista previa.</div>';
+    if(!deepLinkFromParent) document.getElementById('foldersContainer').innerHTML = '<div class="folders-loading">No se pudo cargar la vista previa.</div>';
   }
 }
 
@@ -2361,8 +2373,8 @@ function initApp(){
     mostrarAppAdmin();
     return;
   }
-  const cid = sessionStorage.getItem('nfu_consultante_id');
-  const nombre = sessionStorage.getItem('nfu_consultante_nombre');
+  const cid = localStorage.getItem('nfu_consultante_id');
+  const nombre = localStorage.getItem('nfu_consultante_nombre');
   if(cid && nombre){
     mostrarApp(cid, nombre);
   }
@@ -2474,6 +2486,11 @@ function openRecurso(id){
   });
 }
 function closeReader(){
+  const openId = new URLSearchParams(window.location.search).get('open');
+  if(openId && window.self !== window.top && window.parent.cerrarPreview){
+    window.parent.cerrarPreview();
+    return;
+  }
   document.getElementById('screen-reader').classList.remove('show');
   document.getElementById('toolIframe').src = '';
   document.getElementById('fabRow').classList.remove('show');
@@ -2481,7 +2498,14 @@ function closeReader(){
 }
 function toggleDrawer(open){ document.getElementById('idxDrawer').classList.toggle('show', open); }
 function openSDP(){ document.getElementById('screen-sdp').classList.add('show'); document.getElementById('sdpBackBtn').classList.add('show'); }
-function closeSDP(){ document.getElementById('screen-sdp').classList.remove('show'); document.getElementById('sdpBackBtn').classList.remove('show'); }
+function closeSDP(){
+  const openId = new URLSearchParams(window.location.search).get('open');
+  if(openId && window.self !== window.top && window.parent.cerrarPreview){
+    window.parent.cerrarPreview();
+    return;
+  }
+  document.getElementById('screen-sdp').classList.remove('show'); document.getElementById('sdpBackBtn').classList.remove('show');
+}
 
 document.getElementById('screen-reader').addEventListener('scroll', function(){
   const max = this.scrollHeight - this.clientHeight;
