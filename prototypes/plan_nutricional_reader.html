@@ -2252,12 +2252,18 @@ const sdplink=(l)=>({t:'sdplink',v:l});
 window.CONSULTANTE_SEXO = 'M';
 function sub(texto){
   if(typeof texto !== 'string') return texto;
-  return texto.replace(/\{\{([^|}]+)\|([^}]+)\}\}/g, (m, masc, fem) => (window.CONSULTANTE_SEXO === 'F' ? fem : masc));
+  let t = texto.replace(/\{\{([^|}]+)\|([^}]+)\}\}/g, (m, masc, fem) => (window.CONSULTANTE_SEXO === 'F' ? fem : masc));
+  t = t.replace(/\*\*([^*]+)\*\*/g, '<strong style="color:var(--accent);">$1</strong>');
+  return t;
 }
+const H3_COLORS = {'🍞':'#0072FB','💪':'#1F9D6B','🥑':'#8B5CF6','💧':'#22A6D9','⚡':'#FF8A3D','🚶':'#2BB6A3','🔁':'#6B9B5E','🍷':'#A8385D','🍫':'#D97845','🧠':'#5B6EF5'};
 function blockHtml(b){
   switch(b.t){
     case 'h2': return `<div class="block-h2">${sub(b.v)}</div>`;
-    case 'h3': return `<div class="block-h3">${b.emoji?`<span>${b.emoji}</span>`:''}${sub(b.v)}</div>`;
+    case 'h3': {
+      const c = H3_COLORS[b.emoji] || 'var(--accent)';
+      return `<div class="block-h3" style="border-left:3px solid ${c};padding-left:10px;"><span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:${c}18;flex-shrink:0;">${b.emoji||''}</span>${sub(b.v)}</div>`;
+    }
     case 'p': return `<p class="block-p">${sub(b.v)}</p>`;
     case 'ul': return `<ul class="block-ul">${b.v.map(i=>`<li>${sub(i)}</li>`).join('')}</ul>`;
     case 'ol': return `<ol class="block-ol">${b.v.map(i=>`<li>${sub(i)}</li>`).join('')}</ol>`;
@@ -2368,6 +2374,16 @@ function mostrarApp(consultanteId, nombre){
   document.getElementById('avatarIniciales').textContent = iniciales(nombre);
   document.getElementById('consultanteSessionBar').style.display = 'flex';
   window.CONSULTANTE_SEXO = localStorage.getItem('nfu_consultante_sexo') || 'M';
+  rpc('obtener_datos_consultante', { p_id: consultanteId }).then(rows=>{
+    if(rows && rows.length){
+      window.CONSULTANTE_SEXO = rows[0].sexo || 'M';
+      localStorage.setItem('nfu_consultante_sexo', window.CONSULTANTE_SEXO);
+      if(rows[0].nombre_display){
+        document.getElementById('nombreConsultante').textContent = rows[0].nombre_display;
+        localStorage.setItem('nfu_consultante_nombre', rows[0].nombre_display);
+      }
+    }
+  }).catch(()=>{});
   cargarDatosConsultante(consultanteId);
 }
 
