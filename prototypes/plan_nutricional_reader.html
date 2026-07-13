@@ -2249,26 +2249,31 @@ const ilink=(l,key)=>({t:'ilink',v:l,key});
 const sdplink=(l)=>({t:'sdplink',v:l});
 
 
+window.CONSULTANTE_SEXO = 'M';
+function sub(texto){
+  if(typeof texto !== 'string') return texto;
+  return texto.replace(/\{\{([^|}]+)\|([^}]+)\}\}/g, (m, masc, fem) => (window.CONSULTANTE_SEXO === 'F' ? fem : masc));
+}
 function blockHtml(b){
   switch(b.t){
-    case 'h2': return `<div class="block-h2">${b.v}</div>`;
-    case 'h3': return `<div class="block-h3">${b.emoji?`<span>${b.emoji}</span>`:''}${b.v}</div>`;
-    case 'p': return `<p class="block-p">${b.v}</p>`;
-    case 'ul': return `<ul class="block-ul">${b.v.map(i=>`<li>${i}</li>`).join('')}</ul>`;
-    case 'ol': return `<ol class="block-ol">${b.v.map(i=>`<li>${i}</li>`).join('')}</ol>`;
-    case 'callout': return `<div class="callout${b.strong?' strong':''}">${b.v}</div>`;
+    case 'h2': return `<div class="block-h2">${sub(b.v)}</div>`;
+    case 'h3': return `<div class="block-h3">${b.emoji?`<span>${b.emoji}</span>`:''}${sub(b.v)}</div>`;
+    case 'p': return `<p class="block-p">${sub(b.v)}</p>`;
+    case 'ul': return `<ul class="block-ul">${b.v.map(i=>`<li>${sub(i)}</li>`).join('')}</ul>`;
+    case 'ol': return `<ol class="block-ol">${b.v.map(i=>`<li>${sub(i)}</li>`).join('')}</ol>`;
+    case 'callout': return `<div class="callout${b.strong?' strong':''}">${sub(b.v)}</div>`;
     case 'xlink': {
       const icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 7h6v6M19 7L9 17M6 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1"/></svg>`;
       const target = b.external ? ` target="_blank" rel="noopener"` : '';
-      return `<div><a class="xlink" href="${b.href}"${target}>${icon}${b.v}</a></div>`;
+      return `<div><a class="xlink" href="${b.href}"${target}>${icon}${sub(b.v)}</a></div>`;
     }
     case 'ilink': {
       const icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>`;
-      return `<div><a class="xlink" href="#" onclick="event.preventDefault();openRecurso('${b.key}')">${icon}${b.v}</a></div>`;
+      return `<div><a class="xlink" href="#" onclick="event.preventDefault();openRecurso('${b.key}')">${icon}${sub(b.v)}</a></div>`;
     }
     case 'sdplink': {
       const icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>`;
-      return `<div><a class="xlink" href="#" onclick="event.preventDefault();openSDP()">${icon}${b.v}</a></div>`;
+      return `<div><a class="xlink" href="#" onclick="event.preventDefault();openSDP()">${icon}${sub(b.v)}</a></div>`;
     }
     default: return '';
   }
@@ -2290,6 +2295,7 @@ async function handleConsultanteLogin(){
     const rows = await rpc('login_consultante', { p_username: user, p_password: pass });
     if(!rows || !rows.length){ msgEl.textContent='Usuario o contraseña incorrectos.'; msgEl.classList.add('show'); return; }
     localStorage.setItem('nfu_consultante_id', rows[0].id);
+    localStorage.setItem('nfu_consultante_sexo', rows[0].sexo || 'M');
     localStorage.setItem('nfu_consultante_nombre', rows[0].nombre_display || rows[0].nombre);
     mostrarApp(rows[0].id, rows[0].nombre_display || rows[0].nombre);
   }catch(e){
@@ -2314,7 +2320,7 @@ function renderFolders(carpetas, recursos){
       }
       const contenido = r.contenido || {};
       if(contenido.tipo === 'nativo_sdp'){
-        return `<div class="resource" onclick="openSDP()"><div class="resource-dot"></div><div class="resource-title">${r.titulo}</div><div class="resource-arrow">→</div></div>`;
+        return `<div class="resource" onclick="openSDP(true)"><div class="resource-dot"></div><div class="resource-title">${r.titulo}</div><div class="resource-arrow">→</div></div>`;
       }
       if(contenido.tipo === 'externo'){
         return `<a class="resource" href="${contenido.url}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit;"><div class="resource-dot"></div><div class="resource-title">${r.titulo}</div><div class="resource-tag">externo ↗</div></a>`;
@@ -2357,6 +2363,7 @@ function mostrarApp(consultanteId, nombre){
   document.getElementById('nombreConsultante').textContent = nombre;
   document.getElementById('avatarIniciales').textContent = iniciales(nombre);
   document.getElementById('consultanteSessionBar').style.display = 'flex';
+  window.CONSULTANTE_SEXO = localStorage.getItem('nfu_consultante_sexo') || 'M';
   cargarDatosConsultante(consultanteId);
 }
 
@@ -2536,7 +2543,7 @@ function openRecurso(id){
   const r = (window.RECURSOS_DATA || []).find(x => x.id === id);
   if(!r || !r.activo){ showToast('Todavía no está cargado'); return; }
   const contenido = r.contenido || {};
-  if(contenido.tipo === 'nativo_sdp'){ openSDP(); return; }
+  if(contenido.tipo === 'nativo_sdp'){ openSDP(true); return; }
   if(contenido.tipo === 'externo'){ window.open(contenido.url, '_blank'); return; }
   if(!contenido.secciones){ showToast('Todavía no está cargado'); return; }
   const carpeta = (window.CARPETAS_DATA || []).find(c => c.id === r.carpeta_id);
@@ -2560,13 +2567,19 @@ function closeReader(){
   document.getElementById('idxDrawer').classList.remove('show');
 }
 function toggleDrawer(open){ document.getElementById('idxDrawer').classList.toggle('show', open); }
-function openSDP(){ document.getElementById('screen-sdp').classList.add('show'); document.getElementById('sdpBackBtn').classList.add('show'); }
+function openSDP(esTopLevel){
+  document.getElementById('screen-sdp').classList.add('show');
+  document.getElementById('sdpBackBtn').classList.add('show');
+  window.SDP_TOPLEVEL = !!esTopLevel;
+}
 function closeSDP(){
-  const openId = new URLSearchParams(window.location.search).get('open');
-  if(openId && window.self !== window.top){
-    try{ window.parent.cerrarPreview(); }
-    catch(e){ window.parent.postMessage('nfu_cerrar_preview', '*'); }
-    return;
+  if(window.SDP_TOPLEVEL){
+    const openId = new URLSearchParams(window.location.search).get('open');
+    if(openId && window.self !== window.top){
+      try{ window.parent.cerrarPreview(); }
+      catch(e){ window.parent.postMessage('nfu_cerrar_preview', '*'); }
+      return;
+    }
   }
   document.getElementById('screen-sdp').classList.remove('show'); document.getElementById('sdpBackBtn').classList.remove('show');
 }
