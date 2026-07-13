@@ -11,6 +11,8 @@
     --line:#DCE6F8; --red:#E5484D; --shadow:rgba(20,60,140,0.10);
   }
   *{box-sizing:border-box;}
+  *{scrollbar-width:none; -ms-overflow-style:none;}
+  *::-webkit-scrollbar{width:0; height:0; display:none;}
   body{margin:0;font-family:'Plus Jakarta Sans',sans-serif;background:#FBFDFF;color:var(--ink-1);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;position:relative;overflow-x:hidden;}
   #bg{position:fixed; inset:0; z-index:-1; background:#FBFDFF;}
   #bg::before, #bg::after{content:''; position:absolute; border-radius:50%; filter:blur(70px);}
