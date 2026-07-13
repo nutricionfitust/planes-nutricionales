@@ -42,7 +42,8 @@
 
   /* ===== screen: folders ===== */
   #screen-folders{max-width:428px; margin:0 auto; padding:28px 16px 40px;}
-  .login-screen{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;}
+  .login-screen{display:none; min-height:100vh; align-items:center; justify-content:center; padding:20px;}
+  .login-screen.show{display:flex;}
   .login-card{position:relative; z-index:1; width:100%; max-width:360px; background:#fff; border:1px solid var(--line); border-radius:20px; padding:30px 24px; box-shadow:0 20px 50px rgba(20,60,140,0.10);}
   .login-brand{font-size:20px; font-weight:800; text-align:center; letter-spacing:-0.01em; margin-bottom:4px;}
   .login-brand span{color:var(--blue);}
@@ -623,7 +624,6 @@
     <div class="reader-bar">
       <div class="back-btn" onclick="closeReader()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></div>
       <div class="reader-crumb" id="readerCrumb">Nutrición Deportiva</div>
-      <div class="idx-btn" id="idxBtn" onclick="toggleDrawer(true)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div>
     </div>
     <div class="progress-track" id="progressTrack"><div class="progress-fill" id="progressFill"></div></div>
   </div>
@@ -2264,8 +2264,8 @@ async function handleConsultanteLogin(){
     const rows = await rpc('login_consultante', { p_username: user, p_password: pass });
     if(!rows || !rows.length){ msgEl.textContent='Usuario o contraseña incorrectos.'; msgEl.classList.add('show'); return; }
     localStorage.setItem('nfu_consultante_id', rows[0].id);
-    localStorage.setItem('nfu_consultante_nombre', rows[0].nombre);
-    mostrarApp(rows[0].id, rows[0].nombre);
+    localStorage.setItem('nfu_consultante_nombre', rows[0].nombre_display || rows[0].nombre);
+    mostrarApp(rows[0].id, rows[0].nombre_display || rows[0].nombre);
   }catch(e){
     msgEl.textContent = 'Error: ' + e.message; msgEl.classList.add('show');
   }
@@ -2377,6 +2377,8 @@ function initApp(){
   const nombre = localStorage.getItem('nfu_consultante_nombre');
   if(cid && nombre){
     mostrarApp(cid, nombre);
+  } else {
+    document.getElementById('screen-login').classList.add('show');
   }
   document.getElementById('screen-login') && document.getElementById('screen-login').addEventListener('keydown', e=>{ if(e.key==='Enter' && e.target.tagName==='INPUT'){ e.preventDefault(); handleConsultanteLogin(); } });
 }
@@ -2423,7 +2425,6 @@ function scrollToTop(){
 
 function openReaderData(r){
   document.getElementById('doc').style.display = 'block';
-  document.getElementById('idxBtn').style.display = 'flex';
   document.getElementById('progressTrack').style.display = 'block';
   document.getElementById('fabRow').classList.add('show');
   document.getElementById('iframeWrap').style.display = 'none';
@@ -2444,7 +2445,7 @@ function openReaderData(r){
     const color = SECTION_COLORS[i % SECTION_COLORS.length];
     const secEl = document.createElement('section');
     secEl.className='sec'; secEl.id=sec.id; secEl.dataset.color=color;
-    const opener = `<div class="chapter-open"><span class="chapter-num">${sec.num}</span><br><span class="chapter-eyebrow">${r.crumb}</span><div class="chapter-title">${sec.title}</div><div class="chapter-rule"></div></div>`;
+    const opener = `<div class="chapter-open"><span class="chapter-num">${sec.num}</span><div class="chapter-title">${sec.title}</div><div class="chapter-rule"></div></div>`;
     secEl.innerHTML = opener + sec.blocks.map(blockHtml).join('');
     sectionsEl.appendChild(secEl);
     const row = `<a class="idx-item" href="#${sec.id}" onclick="event.preventDefault();scrollToSection('${sec.id}')"><span class="idx-num" style="color:${color}">●</span>${sec.title}</a>`;
