@@ -58,6 +58,12 @@
   .folders-loading{text-align:center; color:var(--ink-3); font-size:13px; padding:30px 0;}
   .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;}
   .greet{font-size:22px;font-weight:700;letter-spacing:-0.01em;}
+  .session-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;font-size:12.5px;color:var(--ink-3);}
+  .link-btn{background:none;border:none;color:var(--blue);font-size:12.5px;font-weight:600;cursor:pointer;padding:0;}
+  .link-btn.muted{color:var(--ink-3);}
+  .pw-card{position:relative; background:#fff; border:1px solid var(--line); border-radius:18px; box-shadow:0 10px 28px var(--shadow); max-height:0; opacity:0; overflow:hidden; padding-top:0; padding-bottom:0; margin-bottom:0; border-width:0; transition:max-height .32s ease, opacity .28s ease, padding .32s ease, margin .32s ease, border-width .32s ease;}
+  .pw-card.show{max-height:420px; opacity:1; padding:20px; margin-bottom:20px; border-width:1px;}
+  .pw-close{position:absolute; top:14px; right:14px; width:26px; height:26px; border-radius:8px; background:var(--chip); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--ink-2); font-size:12px; line-height:1; padding:0;}
   .greet span{color:var(--blue);}
   .sub{color:var(--ink-3);font-size:13px;margin-top:4px;}
   .avatar{
@@ -180,8 +186,9 @@
   /* ===== Sistema de Puntos (merged native screen) ===== */
   #screen-sdp{position:fixed; inset:0; z-index:10; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; opacity:0; transform:translateY(28px); pointer-events:none; transition:opacity .32s ease, transform .38s cubic-bezier(.22,1,.36,1);}
   #screen-sdp.show{opacity:1; transform:translateY(0); pointer-events:auto;}
-  .sdp-back-btn{position:fixed; top:14px; left:14px; z-index:15; width:36px; height:36px; border-radius:11px; background:rgba(255,255,255,0.14); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.25); display:none; align-items:center; justify-content:center; color:#fff; cursor:pointer;}
+  .sdp-back-btn{position:fixed; top:14px; left:14px; z-index:15; width:36px; height:36px; border-radius:11px; background:rgba(255,255,255,0.14); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.25); display:none; align-items:center; justify-content:center; color:#fff; cursor:pointer; opacity:1; transition:opacity .3s ease;}
   .sdp-back-btn.show{display:flex;}
+  .sdp-back-btn.faded{opacity:0; pointer-events:none;}
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -596,14 +603,32 @@
 
 <!-- ============ SCREEN 1: FOLDERS ============ -->
 <div id="screen-folders" style="display:none;">
+  <div class="session-bar" id="consultanteSessionBar" style="display:none;">
+    <span></span>
+    <span>
+      <button class="link-btn" onclick="showChangePasswordConsultante()">Cambiar contraseña</button>
+      &nbsp;·&nbsp;
+      <button class="link-btn muted" onclick="logoutConsultante()">Salir</button>
+    </span>
+  </div>
   <div class="top">
     <div>
       <div class="greet" id="greetLine">Hola, <span id="nombreConsultante">…</span></div>
       <div class="sub" id="subGreeting">Francisco compartió estos recursos con vos</div>
       <a href="/prototypes/admin-consultantes.html" id="volverPanelLink" style="display:none;font-size:12px;color:var(--blue);font-weight:600;text-decoration:none;">← Volver al panel</a>
-      <button onclick="logoutConsultante()" id="salirConsultanteBtn" style="display:none;font-size:12px;color:var(--ink-3);font-weight:600;background:none;border:none;padding:0;cursor:pointer;">Salir</button>
     </div>
     <div class="avatar" id="avatarIniciales">··</div>
+  </div>
+
+  <div class="card pw-card" id="cardChangePwConsultante">
+    <button class="pw-close" onclick="cerrarCambiarPasswordConsultante()">✕</button>
+    <h2 style="font-size:14px;margin:0 0 16px;">Cambiar mi contraseña</h2>
+    <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:6px;">Contraseña actual</label>
+    <input id="cpcActual" type="password" style="width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:10px;font-size:14.5px;margin-bottom:14px;">
+    <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:6px;">Contraseña nueva</label>
+    <input id="cpcNueva" type="password" style="width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:10px;font-size:14.5px;margin-bottom:14px;">
+    <button class="btn" onclick="cambiarMiPasswordConsultante()" style="width:100%;background:var(--blue);color:#fff;border:none;border-radius:12px;padding:13px;font-size:14.5px;font-weight:700;cursor:pointer;">Guardar</button>
+    <div class="msg" id="msgChangePwConsultante" style="margin-top:12px;font-size:13px;display:none;"></div>
   </div>
 
   <div id="foldersContainer"><div class="folders-loading">Cargando tus recursos…</div></div>
@@ -2330,7 +2355,7 @@ function mostrarApp(consultanteId, nombre){
   document.getElementById('screen-folders').style.display = 'block';
   document.getElementById('nombreConsultante').textContent = nombre;
   document.getElementById('avatarIniciales').textContent = iniciales(nombre);
-  document.getElementById('salirConsultanteBtn').style.display = 'inline-block';
+  document.getElementById('consultanteSessionBar').style.display = 'flex';
   cargarDatosConsultante(consultanteId);
 }
 
@@ -2338,6 +2363,39 @@ function logoutConsultante(){
   localStorage.removeItem('nfu_consultante_id');
   localStorage.removeItem('nfu_consultante_nombre');
   window.location.href = '/prototypes/index.html';
+}
+
+function showChangePasswordConsultante(){
+  document.getElementById('cardChangePwConsultante').classList.add('show');
+  document.getElementById('cardChangePwConsultante').scrollIntoView({behavior:'smooth', block:'center'});
+}
+function cerrarCambiarPasswordConsultante(){
+  document.getElementById('cardChangePwConsultante').classList.remove('show');
+  document.getElementById('cpcActual').value = '';
+  document.getElementById('cpcNueva').value = '';
+  document.getElementById('msgChangePwConsultante').style.display = 'none';
+}
+async function cambiarMiPasswordConsultante(){
+  const id = localStorage.getItem('nfu_consultante_id');
+  const actual = document.getElementById('cpcActual').value.trim();
+  const nueva = document.getElementById('cpcNueva').value.trim();
+  const msgEl = document.getElementById('msgChangePwConsultante');
+  if(!actual || !nueva){ msgEl.textContent='Completá los dos campos.'; msgEl.style.cssText='margin-top:12px;font-size:13px;display:block;color:#E5484D;'; return; }
+  try{
+    const ok = await rpc('cambiar_password_consultante', { p_id: id, p_password_actual: actual, p_password_nuevo: nueva });
+    if(ok){
+      msgEl.textContent = 'Contraseña actualizada.';
+      msgEl.style.cssText = 'margin-top:12px;font-size:13px;display:block;color:#1F9D6B;';
+      document.getElementById('cpcActual').value = '';
+      document.getElementById('cpcNueva').value = '';
+    } else {
+      msgEl.textContent = 'La contraseña actual no coincide.';
+      msgEl.style.cssText = 'margin-top:12px;font-size:13px;display:block;color:#E5484D;';
+    }
+  }catch(e){
+    msgEl.textContent = 'Error: ' + e.message;
+    msgEl.style.cssText = 'margin-top:12px;font-size:13px;display:block;color:#E5484D;';
+  }
 }
 
 async function mostrarAppAdmin(){
@@ -2381,6 +2439,7 @@ function initApp(){
     document.getElementById('screen-login').classList.add('show');
   }
   document.getElementById('screen-login') && document.getElementById('screen-login').addEventListener('keydown', e=>{ if(e.key==='Enter' && e.target.tagName==='INPUT'){ e.preventDefault(); handleConsultanteLogin(); } });
+  document.getElementById('cardChangePwConsultante').addEventListener('keydown', e=>{ if(e.key==='Enter' && e.target.tagName==='INPUT'){ e.preventDefault(); cambiarMiPasswordConsultante(); } });
 }
 
 let toastTimer;
@@ -2488,8 +2547,9 @@ function openRecurso(id){
 }
 function closeReader(){
   const openId = new URLSearchParams(window.location.search).get('open');
-  if(openId && window.self !== window.top && window.parent.cerrarPreview){
-    window.parent.cerrarPreview();
+  if(openId && window.self !== window.top){
+    try{ window.parent.cerrarPreview(); }
+    catch(e){ window.parent.postMessage('nfu_cerrar_preview', '*'); }
     return;
   }
   document.getElementById('screen-reader').classList.remove('show');
@@ -2501,8 +2561,9 @@ function toggleDrawer(open){ document.getElementById('idxDrawer').classList.togg
 function openSDP(){ document.getElementById('screen-sdp').classList.add('show'); document.getElementById('sdpBackBtn').classList.add('show'); }
 function closeSDP(){
   const openId = new URLSearchParams(window.location.search).get('open');
-  if(openId && window.self !== window.top && window.parent.cerrarPreview){
-    window.parent.cerrarPreview();
+  if(openId && window.self !== window.top){
+    try{ window.parent.cerrarPreview(); }
+    catch(e){ window.parent.postMessage('nfu_cerrar_preview', '*'); }
     return;
   }
   document.getElementById('screen-sdp').classList.remove('show'); document.getElementById('sdpBackBtn').classList.remove('show');
@@ -2511,6 +2572,14 @@ function closeSDP(){
 document.getElementById('screen-reader').addEventListener('scroll', function(){
   const max = this.scrollHeight - this.clientHeight;
   document.getElementById('progressFill').style.width = (max>0?(this.scrollTop/max)*100:0)+'%';
+});
+document.getElementById('screen-sdp').addEventListener('scroll', function(){
+  if(!this.classList.contains('show')) return;
+  const stickyBar = document.querySelector('.sticky-bar');
+  const backBtn = document.getElementById('sdpBackBtn');
+  if(!stickyBar || !backBtn) return;
+  const stuck = stickyBar.getBoundingClientRect().top <= 145;
+  backBtn.classList.toggle('faded', stuck);
 });
 document.addEventListener('wheel', e=>{ if(e.ctrlKey) e.preventDefault(); }, {passive:false});
 document.addEventListener('keydown', e=>{ if((e.ctrlKey||e.metaKey) && ['+','-','=','0'].includes(e.key)) e.preventDefault(); });
