@@ -2283,6 +2283,7 @@ window.CONSULTANTE_HORARIOS = [];
 function sub(texto){
   if(typeof texto !== 'string') return texto;
   let t = texto.replace(/\{\{([^|}]+)\|([^}]+)\}\}/g, (m, masc, fem) => (window.CONSULTANTE_SEXO === 'F' ? fem : masc));
+  t = t.replace(/!!([^!]+)!!/g, '<strong style="color:#E5622A;">$1</strong>');
   t = t.replace(/\*\*([^*]+)\*\*/g, '<strong style="color:var(--accent);">$1</strong>');
   return t;
 }
