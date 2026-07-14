@@ -432,7 +432,7 @@ function renderHorariosCheck(containerId, selected){
   const html = HORARIOS_OPTIONS.map(o=>{
     const checked = selected.includes(o.key) ? 'checked' : '';
     const cls = selected.includes(o.key) ? 'horario-opt checked' : 'horario-opt';
-    return `<label class="${cls}"><input type="checkbox" value="${o.key}" onchange="this.closest('label').classList.toggle('checked', this.checked)">${o.label}</label>`;
+    return `<label class="${cls}"><input type="checkbox" value="${o.key}" ${checked} onchange="this.closest('label').classList.toggle('checked', this.checked)">${o.label}</label>`;
   }).join('');
   document.getElementById(containerId).innerHTML = html;
 }
