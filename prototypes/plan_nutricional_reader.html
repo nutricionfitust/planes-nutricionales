@@ -165,11 +165,14 @@
   #timingPopup.show{opacity:1;pointer-events:auto;}
   #recetaPopup{position:fixed;inset:0;z-index:25;background:rgba(11,27,51,0.4);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .3s ease;display:flex;align-items:flex-end;justify-content:center;}
   #recetaPopup.show{opacity:1;pointer-events:auto;}
-  @media (min-width:700px){ #timingPopup{align-items:center;} #recetaPopup{align-items:center;} }
+  #seccionPopup{position:fixed;inset:0;z-index:25;background:rgba(11,27,51,0.4);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .3s ease;display:flex;align-items:flex-end;justify-content:center;}
+  #seccionPopup.show{opacity:1;pointer-events:auto;}
+  @media (min-width:700px){ #timingPopup{align-items:center;} #recetaPopup{align-items:center;} #seccionPopup{align-items:center;} }
   .timing-card-outer{background:#FBFDFF;border-radius:24px 24px 0 0;width:100%;max-width:520px;max-height:88vh;overflow-y:auto;position:relative;transform:translateY(24px);transition:transform .34s cubic-bezier(.22,1,.36,1);box-shadow:0 -20px 60px rgba(11,27,51,0.25);}
   @media (min-width:700px){ .timing-card-outer{border-radius:24px;max-height:80vh;transform:translateY(16px) scale(0.97);} }
   #timingPopup.show .timing-card-outer{transform:translateY(0) scale(1);}
   #recetaPopup.show .timing-card-outer{transform:translateY(0) scale(1);}
+  #seccionPopup.show .timing-card-outer{transform:translateY(0) scale(1);}
   .timing-close{position:sticky;top:14px;float:right;margin-right:14px;width:32px;height:32px;border-radius:10px;background:rgba(255,255,255,0.9);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-1);z-index:2;box-shadow:0 4px 12px rgba(20,60,140,0.12);}
   .timing-inner{padding:20px 22px 32px;}
   .timing-block{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px;margin-bottom:16px;box-shadow:0 8px 24px var(--shadow);}
@@ -709,6 +712,13 @@
   <div class="timing-card-outer">
     <button class="timing-close" onclick="cerrarRecetaPopup()">✕</button>
     <div class="timing-inner" id="recetaInner"></div>
+  </div>
+</div>
+
+<div id="seccionPopup" onclick="if(event.target===this) cerrarSeccionPopup()">
+  <div class="timing-card-outer">
+    <button class="timing-close" onclick="cerrarSeccionPopup()">✕</button>
+    <div class="timing-inner" id="seccionPopupInner"></div>
   </div>
 </div>
 
@@ -2296,6 +2306,7 @@ function sub(texto){
   let t = texto.replace(/\{\{([^|}]+)\|([^}]+)\}\}/g, (m, masc, fem) => (window.CONSULTANTE_SEXO === 'F' ? fem : masc));
   t = t.replace(/!!([^!]+)!!/g, '<strong style="color:#E5622A;">$1</strong>');
   t = t.replace(/\*\*([^*]+)\*\*/g, '<strong style="color:var(--accent);">$1</strong>');
+  t = t.replace(/~~([^~]+)~~/g, '<span style="text-decoration:line-through;color:var(--ink-3);">$1</span>');
   return t;
 }
 
@@ -2431,6 +2442,23 @@ function cerrarRecetaPopup(){
   document.getElementById('recetaPopup').classList.remove('show');
 }
 
+function abrirSeccionPopup(sectionId){
+  const secciones = window.CURRENT_DOC_SECTIONS || [];
+  const sec = secciones.find(s => s.id === sectionId);
+  const body = document.getElementById('seccionPopupInner');
+  if(!sec){
+    body.innerHTML = `<div style="text-align:center;padding:30px 10px;color:var(--ink-3);font-size:13px;">No se pudo cargar esa sección.</div>`;
+  } else {
+    body.innerHTML = `<div style="text-align:center;margin-bottom:16px;">
+      <div style="font-family:'Fraunces',serif;font-weight:900;font-size:19px;color:var(--ink-1);">${sec.title}</div>
+    </div>` + sec.blocks.map(blockHtml).join('');
+  }
+  document.getElementById('seccionPopup').classList.add('show');
+}
+function cerrarSeccionPopup(){
+  document.getElementById('seccionPopup').classList.remove('show');
+}
+
 function blockHtml(b){
   switch(b.t){
     case 'h2': {
@@ -2474,6 +2502,10 @@ function blockHtml(b){
     case 'recetalink': {
       const icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>`;
       return `<div><a class="xlink" href="#" onclick="event.preventDefault();abrirRecetaPopup()">${icon}${sub(b.v)}</a></div>`;
+    }
+    case 'secpopup': {
+      const icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>`;
+      return `<div><a class="xlink" href="#" onclick="event.preventDefault();abrirSeccionPopup('${b.key}')">${icon}${sub(b.v)}</a></div>`;
     }
     default: return '';
   }
@@ -2704,6 +2736,8 @@ function scrollToTop(){
 }
 
 function openReaderData(r){
+  window.CURRENT_DOC_SECTIONS = r.sections;
+  window.CURRENT_DOC_CRUMB = r.crumb;
   document.getElementById('doc').style.display = 'block';
   document.getElementById('progressTrack').style.display = 'block';
   document.getElementById('fabRow').classList.add('show');
