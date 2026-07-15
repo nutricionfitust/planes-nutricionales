@@ -2761,6 +2761,8 @@ async function descargarPDF(){
   const coverEl = document.querySelector('.doc-cover');
   const secEls = Array.from(document.querySelectorAll('#sections .sec'));
   const piezas = coverEl ? [coverEl, ...secEls] : secEls;
+  const docEl = document.getElementById('doc');
+  const anchoReal = docEl.clientWidth;
 
   try{
     label.textContent = 'Generando…';
@@ -2786,7 +2788,9 @@ async function descargarPDF(){
         scale: scale,
         backgroundColor: '#FBFDFF',
         useCORS: true,
-        logging: false
+        logging: false,
+        width: anchoReal,
+        windowWidth: anchoReal
       });
 
       if(chapterOpen) chapterOpen.style.background = originalBg;
