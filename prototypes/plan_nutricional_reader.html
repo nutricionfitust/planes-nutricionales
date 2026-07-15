@@ -2758,42 +2758,53 @@ async function descargarPDF(){
   const originalLabel = label.textContent;
   btn.disabled = true;
 
-  const docEl = document.getElementById('doc');
-  const chapterOpens = docEl.querySelectorAll('.chapter-open');
-  const originalBgs = [];
-  chapterOpens.forEach((el, i) => {
-    originalBgs.push(el.style.background);
-    const color = SECTION_COLORS[i % SECTION_COLORS.length];
-    el.style.background = `linear-gradient(180deg, ${hexToRgba(color, 0.10)} 0%, transparent 100%)`;
-  });
+  const coverEl = document.querySelector('.doc-cover');
+  const secEls = Array.from(document.querySelectorAll('#sections .sec'));
+  const piezas = coverEl ? [coverEl, ...secEls] : secEls;
 
   try{
     label.textContent = 'Generando…';
     if(document.fonts && document.fonts.ready) await document.fonts.ready;
     await new Promise(r => setTimeout(r, 80));
 
-    const scale = 1.2;
-    const canvas = await html2canvas(docEl, {
-      scale: scale,
-      backgroundColor: '#FBFDFF',
-      useCORS: true,
-      logging: false
-    });
-
-    const imgData = canvas.toDataURL('image/jpeg', 0.9);
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({
-      orientation: canvas.height >= canvas.width ? 'portrait' : 'landscape',
-      unit: 'px',
-      format: [canvas.width, canvas.height],
-      compress: true
-    });
-    pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
+    let pdf = null;
+    const scale = 1.3;
+
+    for(let i=0; i<piezas.length; i++){
+      const pieza = piezas[i];
+      const chapterOpen = pieza.classList.contains('sec') ? pieza.querySelector('.chapter-open') : null;
+      let originalBg = null;
+      if(chapterOpen){
+        originalBg = chapterOpen.style.background;
+        const color = pieza.dataset.color || '#0072FB';
+        chapterOpen.style.background = `linear-gradient(180deg, ${hexToRgba(color, 0.10)} 0%, transparent 100%)`;
+        await new Promise(r => setTimeout(r, 30));
+      }
+
+      const canvas = await html2canvas(pieza, {
+        scale: scale,
+        backgroundColor: '#FBFDFF',
+        useCORS: true,
+        logging: false
+      });
+
+      if(chapterOpen) chapterOpen.style.background = originalBg;
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.9);
+      if(!pdf){
+        pdf = new jsPDF({ unit:'px', format:[canvas.width, canvas.height], compress:true });
+      } else {
+        pdf.addPage([canvas.width, canvas.height], canvas.height >= canvas.width ? 'portrait' : 'landscape');
+      }
+      pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
+      label.textContent = `Generando… ${Math.round(((i+1)/piezas.length)*100)}%`;
+    }
+
     pdf.save('Alimentacion-y-Rendimiento-Deportivo.pdf');
   } catch(e){
     alert('Hubo un problema generando el PDF: ' + e.message);
   } finally {
-    chapterOpens.forEach((el, i) => { el.style.background = originalBgs[i]; });
     btn.disabled = false;
     label.textContent = originalLabel;
   }
