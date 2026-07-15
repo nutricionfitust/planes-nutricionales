@@ -204,10 +204,10 @@
   .drawer-head b{font-size:14px;}
   .drawer-close{width:28px;height:28px;border-radius:8px;background:var(--chip);border:none;color:var(--blue);cursor:pointer;}
 
-  :root{ --accent:#0072FB; --accent-wash:rgba(0,114,251,0.10); }
+  :root{ --accent:#0072FB; --accent-wash:rgba(0,114,251,0.10); --accent-border:rgba(0,114,251,0.35); }
   body{ transition: background-color .6s ease; }
   .block-h2{ border-color: var(--accent); color: var(--accent); transition: color .6s ease, border-color .6s ease; }
-  .xlink{ color: var(--accent); border-color: color-mix(in srgb, var(--accent) 35%, transparent); background: var(--accent-wash); transition: color .6s ease, background .6s ease, border-color .6s ease; }
+  .xlink{ color: var(--accent); border-color: var(--accent-border, rgba(0,114,251,0.35)); background: var(--accent-wash); transition: color .6s ease, background .6s ease, border-color .6s ease; }
   .progress-fill{ background: var(--accent) !important; transition: background .6s ease; }
   .idx-num{ color: var(--accent); transition: color .6s ease; }
   .back-btn, .idx-btn{ color: var(--accent); transition: color .6s ease; }
@@ -2884,6 +2884,7 @@ function openReaderData(r){
         const color = entry.target.dataset.color;
         document.documentElement.style.setProperty('--accent', color);
         document.documentElement.style.setProperty('--accent-wash', hexToRgba(color, 0.10));
+        document.documentElement.style.setProperty('--accent-border', hexToRgba(color, 0.35));
       }
     });
   }, { root: document.getElementById('screen-reader'), rootMargin: '-42% 0px -42% 0px', threshold: 0 });
