@@ -710,6 +710,7 @@
   <button class="fab ghost" onclick="abrirBuscador()" title="Buscar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></button>
   <button class="fab fab-pdf" id="btnDescargarPDF" onclick="descargarPDF()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg><span id="btnPdfLabel">Descargar PDF</span></button>
 </div>
+<div id="pdfSandbox" style="position:fixed; top:0; left:-99999px; z-index:-1; pointer-events:none;"></div>
 <div id="idxDrawer" onclick="if(event.target===this) toggleDrawer(false)">
   <div class="drawer-panel"><div class="drawer-head"><b>Índice</b><button class="drawer-close" onclick="toggleDrawer(false)">✕</button></div><div id="drawerList"></div></div>
 </div>
@@ -2758,62 +2759,56 @@ async function descargarPDF(){
   const originalLabel = label.textContent;
   btn.disabled = true;
 
+  const sandbox = document.getElementById('pdfSandbox');
   const coverEl = document.querySelector('.doc-cover');
   const indexCardEl = document.getElementById('indexCard');
   const secEls = Array.from(document.querySelectorAll('#sections .sec'));
-  const piezas = secEls;
   const docEl = document.getElementById('doc');
   const anchoReal = docEl.clientWidth;
   const docStyle = getComputedStyle(docEl);
   const padSides = docStyle.paddingLeft;
   const padTop = docStyle.paddingTop;
 
-  let coverClone = null, indexClone = null;
-  if(secEls.length && coverEl){
-    coverClone = coverEl.cloneNode(true);
-    coverClone.style.marginBottom = '24px';
-    secEls[0].insertBefore(coverClone, secEls[0].firstChild);
-    if(indexCardEl){
-      indexClone = indexCardEl.cloneNode(true);
-      indexClone.style.marginBottom = '24px';
-      secEls[0].insertBefore(indexClone, coverClone.nextSibling);
-    }
-  }
-
   try{
     label.textContent = 'Generando…';
     if(document.fonts && document.fonts.ready) await document.fonts.ready;
-    await new Promise(r => setTimeout(r, 80));
 
     const { jsPDF } = window.jspdf;
     let pdf = null;
     const scale = 1.3;
 
-    for(let i=0; i<piezas.length; i++){
-      const pieza = piezas[i];
-      const originalPadding = pieza.style.padding;
-      const originalBoxSizing = pieza.style.boxSizing;
-      const originalWidth = pieza.style.width;
-      const originalMaxWidth = pieza.style.maxWidth;
-      pieza.style.boxSizing = 'border-box';
-      pieza.style.width = anchoReal + 'px';
-      pieza.style.maxWidth = anchoReal + 'px';
-      pieza.style.paddingLeft = padSides;
-      pieza.style.paddingRight = padSides;
-      pieza.style.paddingTop = padTop;
-      pieza.style.paddingBottom = '28px';
+    for(let i=0; i<secEls.length; i++){
+      const clone = secEls[i].cloneNode(true);
+      clone.style.boxSizing = 'border-box';
+      clone.style.width = anchoReal + 'px';
+      clone.style.maxWidth = anchoReal + 'px';
+      clone.style.paddingLeft = padSides;
+      clone.style.paddingRight = padSides;
+      clone.style.paddingTop = padTop;
+      clone.style.paddingBottom = '28px';
+      clone.style.background = '#FBFDFF';
 
-      const chapterOpen = pieza.classList.contains('sec') ? pieza.querySelector('.chapter-open') : null;
-      let originalBg = null;
+      if(i === 0 && coverEl){
+        const coverClone = coverEl.cloneNode(true);
+        coverClone.style.marginBottom = '24px';
+        clone.insertBefore(coverClone, clone.firstChild);
+        if(indexCardEl){
+          const indexClone = indexCardEl.cloneNode(true);
+          indexClone.style.marginBottom = '24px';
+          clone.insertBefore(indexClone, coverClone.nextSibling);
+        }
+      }
+
+      const chapterOpen = clone.querySelector('.chapter-open');
       if(chapterOpen){
-        originalBg = chapterOpen.style.background;
-        const color = pieza.dataset.color || '#0072FB';
+        const color = secEls[i].dataset.color || '#0072FB';
         chapterOpen.style.background = `linear-gradient(180deg, ${hexToRgba(color, 0.10)} 0%, transparent 100%)`;
       }
 
+      sandbox.appendChild(clone);
       await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
-      const canvas = await html2canvas(pieza, {
+      const canvas = await html2canvas(clone, {
         scale: scale,
         backgroundColor: '#FBFDFF',
         useCORS: true,
@@ -2822,11 +2817,7 @@ async function descargarPDF(){
         windowWidth: anchoReal
       });
 
-      if(chapterOpen) chapterOpen.style.background = originalBg;
-      pieza.style.padding = originalPadding;
-      pieza.style.boxSizing = originalBoxSizing;
-      pieza.style.width = originalWidth;
-      pieza.style.maxWidth = originalMaxWidth;
+      sandbox.removeChild(clone);
 
       const imgData = canvas.toDataURL('image/jpeg', 0.9);
       if(!pdf){
@@ -2835,15 +2826,14 @@ async function descargarPDF(){
         pdf.addPage([canvas.width, canvas.height], canvas.height >= canvas.width ? 'portrait' : 'landscape');
       }
       pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
-      label.textContent = `Generando… ${Math.round(((i+1)/piezas.length)*100)}%`;
+      label.textContent = `Generando… ${Math.round(((i+1)/secEls.length)*100)}%`;
     }
 
     pdf.save('Alimentacion-y-Rendimiento-Deportivo.pdf');
   } catch(e){
     alert('Hubo un problema generando el PDF: ' + e.message);
   } finally {
-    if(coverClone) coverClone.remove();
-    if(indexClone) indexClone.remove();
+    sandbox.innerHTML = '';
     btn.disabled = false;
     label.textContent = originalLabel;
   }
