@@ -2763,6 +2763,9 @@ async function descargarPDF(){
   const piezas = coverEl ? [coverEl, ...secEls] : secEls;
   const docEl = document.getElementById('doc');
   const anchoReal = docEl.clientWidth;
+  const docStyle = getComputedStyle(docEl);
+  const padSides = docStyle.paddingLeft;
+  const padTop = docStyle.paddingTop;
 
   try{
     label.textContent = 'Generando…';
@@ -2775,14 +2778,23 @@ async function descargarPDF(){
 
     for(let i=0; i<piezas.length; i++){
       const pieza = piezas[i];
+      const originalPadding = pieza.style.padding;
+      const originalBoxSizing = pieza.style.boxSizing;
+      pieza.style.boxSizing = 'border-box';
+      pieza.style.paddingLeft = padSides;
+      pieza.style.paddingRight = padSides;
+      pieza.style.paddingTop = padTop;
+      pieza.style.paddingBottom = '28px';
+
       const chapterOpen = pieza.classList.contains('sec') ? pieza.querySelector('.chapter-open') : null;
       let originalBg = null;
       if(chapterOpen){
         originalBg = chapterOpen.style.background;
         const color = pieza.dataset.color || '#0072FB';
         chapterOpen.style.background = `linear-gradient(180deg, ${hexToRgba(color, 0.10)} 0%, transparent 100%)`;
-        await new Promise(r => setTimeout(r, 30));
       }
+
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
       const canvas = await html2canvas(pieza, {
         scale: scale,
@@ -2794,6 +2806,8 @@ async function descargarPDF(){
       });
 
       if(chapterOpen) chapterOpen.style.background = originalBg;
+      pieza.style.padding = originalPadding;
+      pieza.style.boxSizing = originalBoxSizing;
 
       const imgData = canvas.toDataURL('image/jpeg', 0.9);
       if(!pdf){
