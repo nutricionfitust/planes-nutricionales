@@ -793,7 +793,7 @@
       <h1 class="reader-h1" id="readerH1">—</h1>
       <div class="reader-sub" id="readerSub"></div>
     </div>
-    <div class="reader-byline"><a href="https://www.instagram.com/nutricionfitust" target="_blank" rel="noopener">Francisco Ustarroz · @nutricionfitust</a></div>
+    <div class="reader-byline" id="readerByline"><a href="https://www.instagram.com/nutricionfitust" target="_blank" rel="noopener">Francisco Ustarroz · @nutricionfitust</a></div>
     <div class="idx-card" id="indexCard"></div>
     <div id="sections"></div>
   </div>
@@ -2975,12 +2975,15 @@ function openReaderData(r){
 
   const coverCardEl = document.querySelector('.doc-cover');
   const indexCardWrapEl = document.getElementById('indexCard');
+  const bylineEl = document.getElementById('readerByline');
   if(r.hideAutoCover){
     if(coverCardEl) coverCardEl.style.display = 'none';
     if(indexCardWrapEl) indexCardWrapEl.style.display = 'none';
+    if(bylineEl) bylineEl.style.display = 'none';
   } else {
     if(coverCardEl) coverCardEl.style.display = '';
     if(indexCardWrapEl) indexCardWrapEl.style.display = '';
+    if(bylineEl) bylineEl.style.display = '';
   }
 
   let idxHtml = `<div class="idx-card-title">Índice — tocá lo que quieras leer</div>`;
@@ -2993,7 +2996,7 @@ function openReaderData(r){
     const color = SECTION_COLORS[i % SECTION_COLORS.length];
     const secEl = document.createElement('section');
     secEl.className='sec'; secEl.id=sec.id; secEl.dataset.color=color;
-    const opener = `<div class="chapter-open"><span class="chapter-num">${sec.num}</span><div class="chapter-title">${sec.title}</div><div class="chapter-rule"></div></div>`;
+    const opener = sec.hideChapterOpen ? '' : `<div class="chapter-open"><span class="chapter-num">${sec.num}</span><div class="chapter-title">${sec.title}</div><div class="chapter-rule"></div></div>`;
     secEl.innerHTML = opener + sec.blocks.map(blockHtml).join('');
     sectionsEl.appendChild(secEl);
     if(!sec.hideFromDrawer){
