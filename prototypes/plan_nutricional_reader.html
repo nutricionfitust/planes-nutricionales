@@ -218,6 +218,7 @@
     border-radius: 28px; transition: background .6s ease;
   }
   .chapter-num{font-family:'Fraunces',serif; font-weight:900; font-size:56px; line-height:1; color:var(--accent); opacity:0.28; margin-bottom:-14px; transition:color .6s ease;}
+  .chapter-num:empty{display:none;margin-bottom:0;}
   .chapter-eyebrow{font-family:'DM Mono', monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:18px;padding:5px 14px;border-radius:100px;background:var(--accent-wash);display:inline-block;transition:color .6s ease, background .6s ease;}
   .chapter-title{font-family:'Fraunces',serif;font-size:32px;font-weight:900;letter-spacing:-0.01em;color:var(--ink-1);line-height:1.1;max-width:480px;margin:0 auto;}
   .chapter-rule{width:46px;height:4px;border-radius:4px;background:var(--accent);margin:22px auto 0;transition:background .6s ease;}
@@ -2972,6 +2973,16 @@ function openReaderData(r){
   document.getElementById('readerH1').textContent = r.title;
   document.getElementById('readerSub').textContent = r.sub || '';
 
+  const coverCardEl = document.querySelector('.doc-cover');
+  const indexCardWrapEl = document.getElementById('indexCard');
+  if(r.hideAutoCover){
+    if(coverCardEl) coverCardEl.style.display = 'none';
+    if(indexCardWrapEl) indexCardWrapEl.style.display = 'none';
+  } else {
+    if(coverCardEl) coverCardEl.style.display = '';
+    if(indexCardWrapEl) indexCardWrapEl.style.display = '';
+  }
+
   let idxHtml = `<div class="idx-card-title">Índice — tocá lo que quieras leer</div>`;
   const topRow = `<a class="idx-item" href="#" onclick="event.preventDefault();scrollToTop()"><span class="idx-num" style="color:${SECTION_COLORS[0]}">●</span>${r.title}</a>`;
   idxHtml += topRow;
@@ -2985,9 +2996,11 @@ function openReaderData(r){
     const opener = `<div class="chapter-open"><span class="chapter-num">${sec.num}</span><div class="chapter-title">${sec.title}</div><div class="chapter-rule"></div></div>`;
     secEl.innerHTML = opener + sec.blocks.map(blockHtml).join('');
     sectionsEl.appendChild(secEl);
-    const row = `<a class="idx-item" href="#${sec.id}" onclick="event.preventDefault();scrollToSection('${sec.id}')"><span class="idx-num" style="color:${color}">●</span>${sec.title}</a>`;
-    idxHtml += row;
-    drawerHtml += row.replace('onclick="', `onclick="toggleDrawer(false);`);
+    if(!sec.hideFromDrawer){
+      const row = `<a class="idx-item" href="#${sec.id}" onclick="event.preventDefault();scrollToSection('${sec.id}')"><span class="idx-num" style="color:${color}">●</span>${sec.title}</a>`;
+      idxHtml += row;
+      drawerHtml += row.replace('onclick="', `onclick="toggleDrawer(false);`);
+    }
   });
   document.getElementById('indexCard').innerHTML = idxHtml;
   document.getElementById('drawerList').innerHTML = drawerHtml;
@@ -3021,7 +3034,8 @@ function openRecurso(id){
     crumb: carpeta ? carpeta.nombre : '',
     title: r.titulo,
     sub: r.descripcion,
-    sections: contenido.secciones
+    sections: contenido.secciones,
+    hideAutoCover: contenido.hideAutoCover
   });
 }
 function closeReader(){
